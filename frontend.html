@@ -214,11 +214,29 @@
     .brand-logo { width: 36px; height: 36px; font-size: 16px; }
     .brand-text h1 { font-size: 14px; line-height: 1.3; }
     .brand-text p, .api-badge { display: none; }
-    .header-controls { flex-wrap: wrap; gap: 6px; justify-content: stretch; }
-    .header-controls select { flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px; }
-    .role-toggle { flex: 1; padding: 2px; }
-    .role-toggle button { flex: 1; padding: 5px 6px; font-size: 11px; }
-    .logout-btn { padding: 5px 10px; font-size: 11px; }
+
+    /* 手機 header controls 重排：員工下拉與登出一行；角色切換獨立一行更大顆 */
+    .header-controls { flex-direction: column; gap: 8px; align-items: stretch; }
+    .header-controls > select, .header-controls > .logout-btn {
+      display: inline-block;
+    }
+    /* 用 wrapper 把 select 跟 logout 放一行 */
+    .header-controls select { width: 100%; font-size: 13px; padding: 10px 12px; height: 42px; box-sizing: border-box; }
+    .logout-btn { padding: 10px 14px; font-size: 12px; height: 42px; }
+
+    /* 角色切換大顆 */
+    .role-toggle {
+      width: 100%; padding: 4px; gap: 4px;
+      background: rgba(255,255,255,0.18);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .role-toggle button {
+      flex: 1; padding: 10px 6px; font-size: 13px; font-weight: 600;
+      border-radius: 6px; transition: all 0.15s;
+    }
+    .role-toggle button.active {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
 
     /* Container & layout */
     .container { padding: 14px 10px; }
@@ -231,9 +249,50 @@
     .profile-meta { font-size: 12px; }
     .quick-info-box { font-size: 10px; padding: 8px 10px; }
 
-    /* Tabs 緊縮 */
-    .tabs { padding: 4px; gap: 2px; margin-bottom: 12px; }
-    .tab { padding: 7px 10px; font-size: 12px; }
+    /* Tabs 改成手機 App 風格的大顆 pill 按鈕 + 水平滑動 */
+    .tabs {
+      padding: 6px;
+      gap: 6px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;  /* Firefox */
+      position: sticky;
+      top: 12px;
+      z-index: 50;
+      background: var(--card);
+    }
+    .tabs::-webkit-scrollbar { display: none; }  /* Chrome/Safari */
+    .tab {
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      min-height: 40px;
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+      border: 1px solid transparent;
+    }
+    .tab:not(.active) {
+      background: var(--soft);
+      color: var(--primary);
+      border-color: var(--border);
+    }
+    .tab.active {
+      box-shadow: 0 4px 12px rgba(13, 79, 108, 0.35);
+      transform: translateY(-1px);
+    }
+    /* 滑動提示線在 tabs 容器底部 */
+    .tabs::after {
+      content: "";
+      position: absolute;
+      right: 6px; top: 50%;
+      width: 16px; height: 24px;
+      transform: translateY(-50%);
+      background: linear-gradient(to right, transparent, var(--card) 60%);
+      pointer-events: none;
+      display: none;
+    }
 
     /* Cards */
     .card { padding: 14px; border-radius: 10px; margin-bottom: 12px; }
