@@ -278,34 +278,30 @@
     /* 隱藏原本的上方 tabs (改用底部導航) */
     .tabs { display: none !important; }
 
-    /* Header 緊縮 */
-    .header { padding: 10px 14px; }
-    .header-inner { flex-direction: column; gap: 10px; align-items: stretch; }
+    /* Header 極簡：只剩 logo + brand，sticky 在頂部 */
+    .header {
+      padding: 12px 16px;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-inner { flex-direction: row; align-items: center; gap: 10px; }
     .brand-logo { width: 36px; height: 36px; font-size: 16px; }
     .brand-text h1 { font-size: 14px; line-height: 1.3; }
     .brand-text p, .api-badge { display: none; }
 
-    /* 手機 header controls 重排：員工下拉與登出一行；角色切換獨立一行更大顆 */
-    .header-controls { flex-direction: column; gap: 8px; align-items: stretch; }
-    .header-controls > select, .header-controls > .logout-btn {
-      display: inline-block;
-    }
-    /* 用 wrapper 把 select 跟 logout 放一行 */
-    .header-controls select { width: 100%; font-size: 13px; padding: 10px 12px; height: 42px; box-sizing: border-box; }
-    .logout-btn { padding: 10px 14px; font-size: 12px; height: 42px; }
+    /* 隱藏 header 的角色/學員/登出 (改放在「我的」面板) */
+    .header-controls { display: none !important; }
 
-    /* 角色切換大顆 */
-    .role-toggle {
-      width: 100%; padding: 4px; gap: 4px;
-      background: rgba(255,255,255,0.18);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    /* mobile profile sheet 內的角色按鈕樣式 */
+    .mrole-btn {
+      flex: 1; background: transparent; border: none;
+      padding: 10px 6px; font-size: 13px; font-weight: 600;
+      border-radius: 8px; cursor: pointer;
+      color: var(--muted); font-family: inherit;
+      transition: all 0.15s;
     }
-    .role-toggle button {
-      flex: 1; padding: 10px 6px; font-size: 13px; font-weight: 600;
-      border-radius: 6px; transition: all 0.15s;
-    }
-    .role-toggle button.active {
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    .mrole-btn.active {
+      background: white; color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     /* Container & layout */
@@ -692,25 +688,59 @@
   <button class="mbn-btn" data-tab="coach" onclick="mobileNavSwitch('coach')">
     <span class="mbn-icon">🤖</span><span class="mbn-label">教練</span>
   </button>
-  <button class="mbn-btn" onclick="openMobileMore()">
-    <span class="mbn-icon">⋯</span><span class="mbn-label">更多</span>
+  <button class="mbn-btn" onclick="openMobileProfile()">
+    <span class="mbn-icon">👤</span><span class="mbn-label">我的</span>
   </button>
 </nav>
 
-<!-- 手機版「更多」彈出選單 -->
-<div id="mobileMoreSheet" class="mobile-more-sheet hidden" onclick="if(event.target===this) closeMobileMore()">
+<!-- 手機版「我的」彈出面板（含視角切換、學員切換、次要功能、登出）-->
+<div id="mobileProfileSheet" class="mobile-more-sheet hidden" onclick="if(event.target===this) closeMobileProfile()">
   <div class="mms-content">
     <div class="mms-handle"></div>
-    <h3 style="margin-bottom:14px;font-size:16px;color:var(--primary)">更多功能</h3>
-    <div class="mms-grid">
-      <button class="mms-item" onclick="mobileNavSwitch('ilp'); closeMobileMore();"><span style="font-size:24px">📝</span><span>ILP 學習計畫</span></button>
-      <button class="mms-item" onclick="mobileNavSwitch('map'); closeMobileMore();"><span style="font-size:24px">🗺️</span><span>學習地圖</span></button>
-      <button class="mms-item" onclick="mobileNavSwitch('resources'); closeMobileMore();"><span style="font-size:24px">📖</span><span>院內資源</span></button>
-      <button class="mms-item" onclick="mobileNavSwitch('reflection'); closeMobileMore();"><span style="font-size:24px">📔</span><span>反思日誌</span></button>
-      <button class="mms-item" onclick="mobileNavSwitch('catalog'); closeMobileMore();"><span style="font-size:24px">🔍</span><span>課程瀏覽</span></button>
-      <button class="mms-item" onclick="logout(); closeMobileMore();"><span style="font-size:24px">🚪</span><span>登出</span></button>
+
+    <!-- 個人區塊 -->
+    <div id="mobileProfileHeader" style="display:flex;gap:12px;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
+      <div id="mobileProfileAvatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));color:white;display:grid;place-items:center;font-weight:700;font-size:20px">?</div>
+      <div style="flex:1">
+        <div id="mobileProfileName" style="font-weight:700;font-size:15px">-</div>
+        <div id="mobileProfileMeta" style="font-size:12px;color:var(--muted);margin-top:2px">-</div>
+      </div>
     </div>
-    <button onclick="closeMobileMore()" style="width:100%;margin-top:14px;background:var(--soft);border:none;padding:12px;border-radius:10px;font-size:14px;cursor:pointer">關閉</button>
+
+    <!-- 視角切換 -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:8px">視角切換</div>
+      <div id="mobileRoleToggle" style="display:flex;gap:6px;background:var(--soft);padding:4px;border-radius:10px">
+        <button class="mrole-btn active" data-role="self" onclick="mobileSwitchRole('self')">學員</button>
+        <button class="mrole-btn" data-role="mentor" onclick="mobileSwitchRole('mentor')">臨床教師</button>
+        <button class="mrole-btn" data-role="center" onclick="mobileSwitchRole('center')">教學部</button>
+      </div>
+    </div>
+
+    <!-- 切換學員 -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:8px">切換學員（demo）</div>
+      <select id="mobileEmployeeSelect" onchange="loadEmployee(this.value)" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:14px;background:white;font-family:inherit"></select>
+    </div>
+
+    <!-- 次要功能 -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-weight:600;margin-bottom:8px">其他功能</div>
+      <div class="mms-grid">
+        <button class="mms-item" onclick="mobileNavSwitch('ilp'); closeMobileProfile();"><span style="font-size:24px">📝</span><span>ILP 計畫</span></button>
+        <button class="mms-item" onclick="mobileNavSwitch('map'); closeMobileProfile();"><span style="font-size:24px">🗺️</span><span>學習地圖</span></button>
+        <button class="mms-item" onclick="mobileNavSwitch('resources'); closeMobileProfile();"><span style="font-size:24px">📖</span><span>院內資源</span></button>
+        <button class="mms-item" onclick="mobileNavSwitch('reflection'); closeMobileProfile();"><span style="font-size:24px">📔</span><span>反思日誌</span></button>
+        <button class="mms-item" onclick="mobileNavSwitch('catalog'); closeMobileProfile();"><span style="font-size:24px">🔍</span><span>課程瀏覽</span></button>
+      </div>
+    </div>
+
+    <!-- 登出 -->
+    <button onclick="logout()" style="width:100%;background:#fef2f2;color:var(--danger);border:1px solid #fecaca;padding:14px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+      🚪 登出
+    </button>
+
+    <button onclick="closeMobileProfile()" style="width:100%;margin-top:8px;background:transparent;border:none;padding:10px;font-size:13px;color:var(--muted);cursor:pointer">關閉</button>
   </div>
 </div>
 
@@ -1993,6 +2023,48 @@ function openMobileMore() {
 }
 function closeMobileMore() {
   document.getElementById('mobileMoreSheet').classList.add('hidden');
+}
+
+
+/* ====================================================
+   手機「我的」面板（角色 / 學員 / 設定）
+==================================================== */
+function openMobileProfile() {
+  syncMobileProfile();
+  document.getElementById('mobileProfileSheet').classList.remove('hidden');
+}
+function closeMobileProfile() {
+  document.getElementById('mobileProfileSheet').classList.add('hidden');
+}
+
+function syncMobileProfile() {
+  // 同步當前學員資訊
+  const emp = (employeesCache || []).find(e => e.employee_id === currentEmployeeId);
+  if (emp) {
+    document.getElementById('mobileProfileAvatar').textContent = emp.avatar || emp.name[0];
+    document.getElementById('mobileProfileName').textContent = emp.name;
+    document.getElementById('mobileProfileMeta').textContent = emp.employee_id + ' · ' + emp.stage;
+  }
+  // 同步角色按鈕 active state
+  document.querySelectorAll('.mrole-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.role === currentRole);
+  });
+  // 同步學員下拉選單 options
+  const sel = document.getElementById('mobileEmployeeSelect');
+  if (sel && sel.options.length === 0 && employeesCache) {
+    employeesCache.forEach(e => {
+      const opt = document.createElement('option');
+      opt.value = e.employee_id;
+      opt.textContent = e.employee_id + '  ' + e.name + '  (' + e.stage + ')';
+      sel.appendChild(opt);
+    });
+  }
+  if (sel) sel.value = currentEmployeeId;
+}
+
+async function mobileSwitchRole(role) {
+  await switchRole(role);
+  syncMobileProfile();
 }
 </script>
 </body>
