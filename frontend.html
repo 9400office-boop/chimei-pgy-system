@@ -203,6 +203,114 @@
 
   /* API badge in header */
   .api-badge{font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(52,211,153,0.2);color:#34d399;font-family:monospace}
+
+  /* ========================================================
+     手機版響應式優化 (≤ 768px)
+     ======================================================== */
+  @media (max-width: 768px) {
+    /* Header 緊縮 */
+    .header { padding: 10px 14px; }
+    .header-inner { flex-direction: column; gap: 10px; align-items: stretch; }
+    .brand-logo { width: 36px; height: 36px; font-size: 16px; }
+    .brand-text h1 { font-size: 14px; line-height: 1.3; }
+    .brand-text p, .api-badge { display: none; }
+    .header-controls { flex-wrap: wrap; gap: 6px; justify-content: stretch; }
+    .header-controls select { flex: 1; min-width: 0; font-size: 12px; padding: 6px 10px; }
+    .role-toggle { flex: 1; padding: 2px; }
+    .role-toggle button { flex: 1; padding: 5px 6px; font-size: 11px; }
+    .logout-btn { padding: 5px 10px; font-size: 11px; }
+
+    /* Container & layout */
+    .container { padding: 14px 10px; }
+    .grid-main { grid-template-columns: 1fr; gap: 12px; }
+
+    /* Profile card 摺疊化 */
+    .profile-card { position: static; padding: 14px; }
+    .avatar { width: 56px; height: 56px; font-size: 22px; margin-bottom: 8px; }
+    .profile-name { font-size: 15px; }
+    .profile-meta { font-size: 12px; }
+    .quick-info-box { font-size: 10px; padding: 8px 10px; }
+
+    /* Tabs 緊縮 */
+    .tabs { padding: 4px; gap: 2px; margin-bottom: 12px; }
+    .tab { padding: 7px 10px; font-size: 12px; }
+
+    /* Cards */
+    .card { padding: 14px; border-radius: 10px; margin-bottom: 12px; }
+    .card h2 { font-size: 14px; }
+    .card h2 .icon { width: 26px; height: 26px; font-size: 13px; }
+    .card-sub { font-size: 11px; }
+    .api-call { display: none; }
+
+    /* Stats */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    .stat-card { padding: 12px; }
+    .stat-value { font-size: 20px; }
+    .stat-label { font-size: 10px; }
+
+    /* Radar chart 縮小 */
+    .radar-wrap { grid-template-columns: 1fr; gap: 14px; }
+    .gap-list li { font-size: 12px; padding: 8px 10px; }
+
+    /* Coach 對話 */
+    .coach-wrap { grid-template-columns: 1fr; gap: 10px; }
+    .chat-window { height: 280px; padding: 12px; }
+    .msg { font-size: 12px; padding: 8px 12px; max-width: 90%; }
+    .quick-prompts button { font-size: 11px; padding: 7px 10px; }
+
+    /* Resources */
+    .resources-grid { grid-template-columns: 1fr; gap: 8px; }
+    .resource-item { padding: 12px; }
+    .resource-title { font-size: 12px; }
+
+    /* Team grid (mentor / center views) */
+    .team-grid { grid-template-columns: 1fr; gap: 8px; }
+
+    /* Heatmap 改可橫向捲動 */
+    .heatmap { overflow-x: auto; grid-template-columns: 80px repeat(6, minmax(50px, 1fr)); font-size: 10px; }
+    .heatmap .row-label { padding: 4px; }
+    .heatmap .cell { height: 28px; font-size: 11px; }
+
+    /* ILP 表單 */
+    .ilp-row { grid-template-columns: 1fr; gap: 10px; }
+    .ilp-section textarea { min-height: 60px; font-size: 12px; }
+    .ilp-section input, .ilp-section select { font-size: 12px; padding: 8px 10px; }
+    .ilp-section .hint { font-size: 10px; padding: 5px 8px; }
+
+    /* AI Plan */
+    .ai-plan { padding: 14px; }
+    .ai-plan-section p, .ai-plan-section ul { font-size: 12px; }
+
+    /* Timeline */
+    .timeline { padding-left: 24px; }
+    .timeline-item::before { left: -22px; width: 12px; height: 12px; }
+    .timeline-title { font-size: 13px; }
+    .timeline-desc { font-size: 11px; }
+
+    /* Modal 改近全螢幕 */
+    #genericModal > div { max-width: 100% !important; max-height: 100vh !important; border-radius: 0 !important; }
+
+    /* Goal bars 緊縮 */
+    .goal-row { grid-template-columns: 1fr; gap: 4px; padding: 8px 0; font-size: 12px; }
+    .goal-row span:last-child { text-align: left !important; }
+
+    /* Buttons */
+    .btn { font-size: 12px; padding: 8px 14px; }
+
+    /* Footer */
+    .footer-note { font-size: 11px; padding: 12px 14px; }
+  }
+
+  /* 超小螢幕 (≤ 480px) 進一步壓縮 */
+  @media (max-width: 480px) {
+    .container { padding: 10px 8px; }
+    .header { padding: 8px 10px; }
+    .brand-text h1 { font-size: 13px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .stat-value { font-size: 18px; }
+    .role-toggle button { font-size: 10px; padding: 4px 6px; }
+    .header-controls select { font-size: 11px; }
+  }
 </style>
 </head>
 <body>
