@@ -136,7 +136,7 @@ RESOURCES = [
     ('院內', 'SBP', '醫療品質 / 感染控制討論會', '醫療品質與感控', '每月各 1 次', ['SBP']),
     ('book', 'MK', '奇美醫院內科工作規範', '院內 SOP', '院內提供', ['SOP']),
     ('book', 'MK', 'Washington Manual', '內科治療標準', '圖書館', ['MK', '治療']),
-    ('book', 'MK', "Harrison's Principles", '內科聖經', '圖書館', ['MK']),
+    ('book', 'MK', "Harrison's Principles", '內科', '圖書館', ['MK']),
     ('online', 'MK', '圖書館電子資源', '電子期刊、電子書', '院內外可用', ['MK', '文獻']),
     ('online', 'PBLI', 'E-portfolio 電子歷程', '案例登錄、評核', '院內系統', ['PBLI']),
     ('skill', 'PC', '胃腸內科 內視鏡訓練', '住院醫師可實際操作', '胃腸內科協調', ['endoscopy']),
