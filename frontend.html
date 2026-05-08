@@ -205,9 +205,79 @@
   .api-badge{font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(52,211,153,0.2);color:#34d399;font-family:monospace}
 
   /* ========================================================
+     手機版底部固定導航 (App-like UX)
+     ======================================================== */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    z-index: 200;
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+  }
+  .mobile-bottom-nav { justify-content: space-around; }
+  .mbn-btn {
+    flex: 1; background: none; border: none; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    padding: 6px 4px; border-radius: 8px;
+    color: var(--muted); font-family: inherit;
+    transition: all 0.15s;
+    min-height: 50px;
+  }
+  .mbn-btn:active { background: var(--soft); }
+  .mbn-btn.active { color: var(--primary); }
+  .mbn-icon { font-size: 22px; line-height: 1; }
+  .mbn-label { font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+
+  /* 「更多」彈出選單 */
+  .mobile-more-sheet {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 250;
+    display: flex; align-items: flex-end;
+    animation: fadeIn 0.2s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+  .mms-content {
+    width: 100%; background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 16px 18px calc(16px + env(safe-area-inset-bottom, 0px));
+    animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 80vh; overflow-y: auto;
+  }
+  .mms-handle {
+    width: 40px; height: 4px; background: var(--border);
+    border-radius: 2px; margin: 0 auto 14px;
+  }
+  .mms-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  .mms-item {
+    background: var(--soft); border: 1px solid var(--border);
+    border-radius: 14px; padding: 16px 8px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text); font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .mms-item:active { background: var(--accent-light); transform: scale(0.96); }
+
+  /* ========================================================
      手機版響應式優化 (≤ 768px)
      ======================================================== */
   @media (max-width: 768px) {
+    /* 顯示底部導航 */
+    body { padding-bottom: 70px; }
+    .mobile-bottom-nav { display: flex !important; }
+
+    /* 隱藏原本的上方 tabs (改用底部導航) */
+    .tabs { display: none !important; }
+
     /* Header 緊縮 */
     .header { padding: 10px 14px; }
     .header-inner { flex-direction: column; gap: 10px; align-items: stretch; }
@@ -607,6 +677,43 @@
     正式環境只需替換：(1) SQLite → PostgreSQL/SQL Server (2) Mock SSO → LDAP/AD (3) Mock Coach → Claude API (4) Mock 資料 → 串接奇美 e-portfolio / HR 系統。
   </div>
 </div>
+
+<!-- 手機版底部導航 (僅 ≤768px 顯示) -->
+<nav id="mobileBottomNav" class="mobile-bottom-nav hidden">
+  <button class="mbn-btn active" data-tab="dashboard" onclick="mobileNavSwitch('dashboard')">
+    <span class="mbn-icon">🏠</span><span class="mbn-label">首頁</span>
+  </button>
+  <button class="mbn-btn" data-tab="courses" onclick="mobileNavSwitch('courses')">
+    <span class="mbn-icon">📚</span><span class="mbn-label">課程</span>
+  </button>
+  <button class="mbn-btn" data-tab="radar" onclick="mobileNavSwitch('radar')">
+    <span class="mbn-icon">📊</span><span class="mbn-label">能力</span>
+  </button>
+  <button class="mbn-btn" data-tab="coach" onclick="mobileNavSwitch('coach')">
+    <span class="mbn-icon">🤖</span><span class="mbn-label">教練</span>
+  </button>
+  <button class="mbn-btn" onclick="openMobileMore()">
+    <span class="mbn-icon">⋯</span><span class="mbn-label">更多</span>
+  </button>
+</nav>
+
+<!-- 手機版「更多」彈出選單 -->
+<div id="mobileMoreSheet" class="mobile-more-sheet hidden" onclick="if(event.target===this) closeMobileMore()">
+  <div class="mms-content">
+    <div class="mms-handle"></div>
+    <h3 style="margin-bottom:14px;font-size:16px;color:var(--primary)">更多功能</h3>
+    <div class="mms-grid">
+      <button class="mms-item" onclick="mobileNavSwitch('ilp'); closeMobileMore();"><span style="font-size:24px">📝</span><span>ILP 學習計畫</span></button>
+      <button class="mms-item" onclick="mobileNavSwitch('map'); closeMobileMore();"><span style="font-size:24px">🗺️</span><span>學習地圖</span></button>
+      <button class="mms-item" onclick="mobileNavSwitch('resources'); closeMobileMore();"><span style="font-size:24px">📖</span><span>院內資源</span></button>
+      <button class="mms-item" onclick="mobileNavSwitch('reflection'); closeMobileMore();"><span style="font-size:24px">📔</span><span>反思日誌</span></button>
+      <button class="mms-item" onclick="mobileNavSwitch('catalog'); closeMobileMore();"><span style="font-size:24px">🔍</span><span>課程瀏覽</span></button>
+      <button class="mms-item" onclick="logout(); closeMobileMore();"><span style="font-size:24px">🚪</span><span>登出</span></button>
+    </div>
+    <button onclick="closeMobileMore()" style="width:100%;margin-top:14px;background:var(--soft);border:none;padding:12px;border-radius:10px;font-size:14px;cursor:pointer">關閉</button>
+  </div>
+</div>
+
 </div>
 
 <script>
@@ -1864,6 +1971,28 @@ async function loadInstructorQrCourseList() {
   } catch (e) {
     wrap.innerHTML = '<div style="color:var(--danger)">載入失敗：' + e.message + '</div>';
   }
+}
+
+
+/* ====================================================
+   手機底部導航 (Mobile Bottom Nav)
+==================================================== */
+function mobileNavSwitch(tab) {
+  // 同步 active state 到底部導航
+  document.querySelectorAll('.mbn-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  // 呼叫原本的 switchTab
+  switchTab(tab);
+  // 滾動到頁首
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openMobileMore() {
+  document.getElementById('mobileMoreSheet').classList.remove('hidden');
+}
+function closeMobileMore() {
+  document.getElementById('mobileMoreSheet').classList.add('hidden');
 }
 </script>
 </body>
