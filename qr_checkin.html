@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>奇美 PGY 課程簽到</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;
+    background:linear-gradient(135deg,#0d4f6c 0%,#083449 100%);
+    color:#1f2937;min-height:100vh;
+    display:grid;place-items:center;padding:20px;
+  }
+  .card{
+    background:white;border-radius:18px;padding:28px 24px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    max-width:420px;width:100%;
+  }
+  .logo-row{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+  .logo{
+    width:42px;height:42px;border-radius:10px;
+    background:#20a39e;color:white;display:grid;place-items:center;
+    font-weight:800;font-size:20px;
+  }
+  .logo-text h1{font-size:15px;color:#0d4f6c;font-weight:700}
+  .logo-text p{font-size:11px;color:#6b7280}
+
+  .course-info{
+    background:#f3f6f9;border-radius:12px;padding:14px;margin-bottom:18px;
+  }
+  .course-info .label{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px}
+  .course-info h2{font-size:15px;font-weight:700;margin-top:4px}
+  .course-info .meta{font-size:12px;color:#6b7280;margin-top:4px}
+
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#374151}
+  input{
+    width:100%;padding:14px;border:2px solid #e5e7eb;border-radius:10px;
+    font-size:18px;font-family:inherit;letter-spacing:1px;
+    -webkit-appearance:none;
+  }
+  input:focus{outline:none;border-color:#20a39e}
+
+  .btn{
+    width:100%;background:#0d4f6c;color:white;border:none;
+    padding:16px;border-radius:10px;font-size:16px;font-weight:700;
+    cursor:pointer;margin-top:14px;
+    -webkit-appearance:none;
+  }
+  .btn:active{background:#083449}
+  .btn:disabled{opacity:0.5}
+
+  .loader{
+    display:inline-block;width:18px;height:18px;
+    border:3px solid rgba(255,255,255,0.3);border-top-color:white;
+    border-radius:50%;animation:spin 0.8s linear infinite;
+    vertical-align:middle;margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .result{margin-top:14px}
+  .result.success{color:#065f46}
+  .result.error{color:#991b1b}
+
+  .success-card{
+    background:linear-gradient(135deg,#10b981,#059669);color:white;
+    border-radius:14px;padding:20px;text-align:center;
+  }
+  .success-card .check{font-size:60px;margin-bottom:6px}
+  .success-card h2{font-size:20px;font-weight:700}
+  .success-card .course-name{font-size:14px;opacity:0.95;margin-top:4px}
+
+  .changes{
+    background:#ecfdf5;border-left:4px solid #10b981;
+    padding:14px;border-radius:8px;margin-top:14px;
+  }
+  .changes h3{font-size:12px;color:#065f46;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+  .change-item{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:6px 0;font-size:14px;
+  }
+  .change-item .dim{font-weight:600;color:#064e3b}
+  .change-item .delta{
+    background:#10b981;color:white;padding:3px 10px;
+    border-radius:12px;font-size:12px;font-weight:700;
+  }
+
+  .milestones{
+    background:#dbeafe;border-left:4px solid #3b82f6;
+    padding:14px;border-radius:8px;margin-top:10px;font-size:13px;
+  }
+  .milestones h3{font-size:12px;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+
+  .err-card{
+    background:#fee2e2;border-left:4px solid #ef4444;
+    padding:14px;border-radius:8px;color:#991b1b;font-size:14px;
+  }
+
+  .footer{
+    text-align:center;font-size:11px;color:#9ca3af;margin-top:18px;
+  }
+
+  .testid-hint{
+    background:#fff7ed;border:1px solid #fcd34d;
+    padding:8px 12px;border-radius:8px;margin-top:8px;
+    font-size:11px;color:#92400e;
+  }
+  .testid-hint code{
+    background:white;padding:1px 5px;border-radius:3px;
+    font-family:monospace;color:#0d4f6c;
+  }
+</style>
+</head>
+<body>
+
+<div class="card" id="app">
+  <div class="logo-row">
+    <div class="logo">奇</div>
+    <div class="logo-text">
+      <h1>奇美 PGY 內科 課程簽到</h1>
+      <p>QR Code Check-in</p>
+    </div>
+  </div>
+
+  <div id="content"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const token = params.get('token');
+const content = document.getElementById('content');
+
+if (!token) {
+  content.innerHTML = `
+    <div class="err-card">
+      ❌ 找不到 QR Code 內的簽到 token。<br>
+      請重新掃描 QR Code。
+    </div>`;
+} else {
+  showCourseInfo();
+}
+
+async function showCourseInfo() {
+  // For demo, we don't pre-fetch course info via token; just show input
+  content.innerHTML = `
+    <div class="course-info">
+      <div class="label">📚 簽到</div>
+      <h2 id="courseTitle">驗證中...</h2>
+      <div class="meta" id="courseMeta">Token: <code style="font-family:monospace">${token.substring(0, 12)}...</code></div>
+    </div>
+
+    <label>請輸入你的人事號</label>
+    <input type="text" id="empInput" placeholder="P10001" autocomplete="off" autocapitalize="characters" inputmode="text">
+    <div class="testid-hint">
+      💡 demo 測試帳號：<code>P10001</code> 陳冠霖 ｜ <code>P10002</code> 魏瑄誼 ｜ <code>P10006</code> 徐嘉良
+    </div>
+
+    <button class="btn" id="checkinBtn" onclick="doCheckin()">📲 簽到</button>
+    <div id="result"></div>
+
+    <div class="footer">
+      正式版會以院內 SSO 自動帶入身分，免輸入人事號
+    </div>
+  `;
+
+  // Auto-focus on the input
+  setTimeout(() => document.getElementById('empInput').focus(), 100);
+}
+
+async function doCheckin() {
+  const empId = document.getElementById('empInput').value.trim().toUpperCase();
+  if (!empId) {
+    alert('請輸入人事號');
+    return;
+  }
+
+  const btn = document.getElementById('checkinBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> 簽到中...';
+
+  try {
+    const res = await fetch('/api/qr/checkin', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({token, employee_id: empId})
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || '簽到失敗');
+    }
+
+    const r = await res.json();
+    showSuccess(r);
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '📲 重試';
+    document.getElementById('result').innerHTML = `<div class="err-card" style="margin-top:12px">❌ ${e.message}</div>`;
+  }
+}
+
+function showSuccess(r) {
+  let html = `
+    <div class="success-card">
+      <div class="check">✅</div>
+      <h2>簽到成功</h2>
+      <div class="course-name">${r.course_title}</div>
+    </div>`;
+
+  if (r.auto_completed) {
+    html += `
+      <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:12px;border-radius:8px;margin-top:14px;font-size:13px;color:#92400e">
+        🎉 此課程已自動完成！能力分數已更新如下：
+      </div>`;
+  } else {
+    html += `
+      <div style="background:#dbeafe;border-left:4px solid #3b82f6;padding:12px;border-radius:8px;margin-top:14px;font-size:13px;color:#1e40af">
+        📋 簽到完成。${r.message}
+      </div>`;
+  }
+
+  if (r.side_effects && r.side_effects.competency_changes && r.side_effects.competency_changes.length > 0) {
+    html += `
+      <div class="changes">
+        <h3>📊 ACGME 六大核心能力即時更新</h3>
+        ${r.side_effects.competency_changes.map(c => `
+          <div class="change-item">
+            <span class="dim">${getCompetencyName(c.dimension)}</span>
+            <div>
+              <span style="color:#6b7280">${c.from}</span>
+              <span style="margin:0 6px">→</span>
+              <span style="font-weight:700;color:#065f46">${c.to}</span>
+              <span class="delta">+${c.delta}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  if (r.side_effects && r.side_effects.milestones_completed && r.side_effects.milestones_completed.length > 0) {
+    html += `
+      <div class="milestones">
+        <h3>✓ 里程碑已完成</h3>
+        ${r.side_effects.milestones_completed.map(m => `<div>• ${m}</div>`).join('')}
+      </div>`;
+  }
+
+  if (r.side_effects && r.side_effects.monthly_req_updated) {
+    html += `
+      <div style="background:#fef3c7;border-left:4px solid #f59e0b;padding:14px;border-radius:8px;margin-top:10px;font-size:13px;color:#92400e">
+        <strong>本月規定 +1：</strong> ${r.side_effects.monthly_req_updated}
+      </div>`;
+  }
+
+  html += `
+    <button class="btn" style="background:#20a39e;margin-top:20px" onclick="window.close() || (window.location.href='/')">完成</button>
+    <div class="footer">
+      可關閉此頁，回到主系統查看更新後的能力雷達圖
+    </div>`;
+
+  document.getElementById('content').innerHTML = `<div class="logo-row" style="margin-bottom:16px"><div class="logo">奇</div><div class="logo-text"><h1>奇美 PGY 內科 課程簽到</h1></div></div>` + html;
+  // Show the logo at top
+  document.getElementById('app').firstElementChild.style.display = 'none';
+}
+
+function getCompetencyName(code) {
+  return {
+    'PC': '病人照護 (PC)',
+    'MK': '醫學知識 (MK)',
+    'PBLI': '從工作中學習 (PBLI)',
+    'ICS': '人際與溝通 (ICS)',
+    'Prof': '專業素養 (Prof)',
+    'SBP': '系統性實踐 (SBP)'
+  }[code] || code;
+}
+</script>
+</body>
+</html>

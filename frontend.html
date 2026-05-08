@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奇美 PGY 內科 個人化學習與職涯發展系統 (連接後端)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--primary:#0d4f6c;--primary-dark:#083449;--accent:#20a39e;--accent-light:#d6f1ef;--warning:#f59e0b;--danger:#ef4444;--success:#10b981;--bg:#f3f6f9;--card:#fff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;--soft:#f9fafb}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft JhengHei","PingFang TC",sans-serif;background:var(--bg);color:var(--text);line-height:1.55;min-height:100vh}
+
+  /* ==== LOGIN SCREEN ==== */
+  #loginScreen{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#0d4f6c 0%,#083449 100%);padding:24px}
+  .login-box{background:white;padding:40px;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.2);max-width:420px;width:100%}
+  .login-box h1{font-size:20px;color:var(--primary);margin-bottom:6px}
+  .login-box p{font-size:13px;color:var(--muted);margin-bottom:24px}
+  .login-box label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+  .login-box input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+  .login-box button{width:100%;background:var(--primary);color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:14px}
+  .login-box button:hover{background:var(--primary-dark)}
+  .login-helper{margin-top:18px;padding:12px;background:#fff7ed;border-left:3px solid var(--warning);border-radius:6px;font-size:12px;color:#9a3412}
+  .login-helper strong{display:block;margin-bottom:4px}
+  .login-helper code{background:white;padding:1px 6px;border-radius:4px;font-family:monospace;color:var(--primary)}
+  .api-status{margin-top:12px;font-size:11px;text-align:center}
+  .api-status.ok{color:var(--success)}
+  .api-status.err{color:var(--danger)}
+
+  /* ==== HEADER ==== */
+  .header{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:14px 28px;box-shadow:0 2px 8px rgba(0,0,0,0.08);position:sticky;top:0;z-index:100}
+  .header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand-logo{width:42px;height:42px;border-radius:10px;background:var(--accent);display:grid;place-items:center;font-weight:800;font-size:18px}
+  .brand-text h1{font-size:16px;font-weight:700}
+  .brand-text p{font-size:11px;opacity:0.85}
+  .header-controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .header-controls select{background:rgba(255,255,255,0.12);color:white;border:1px solid rgba(255,255,255,0.25);padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;min-width:160px}
+  .header-controls select option{color:var(--text)}
+  .role-toggle{display:inline-flex;gap:4px;padding:4px;background:rgba(255,255,255,0.1);border-radius:8px}
+  .role-toggle button{background:transparent;color:white;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px}
+  .role-toggle button.active{background:white;color:var(--primary);font-weight:600}
+  .logout-btn{background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.3);padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer}
+
+  /* ==== LAYOUT ==== */
+  .container{max-width:1400px;margin:0 auto;padding:24px 28px}
+  .grid-main{display:grid;grid-template-columns:300px 1fr;gap:24px}
+  @media (max-width:980px){.grid-main{grid-template-columns:1fr}}
+
+  /* Profile */
+  .profile-card{background:var(--card);border-radius:14px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,0.05);position:sticky;top:90px}
+  .avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--primary));color:white;font-size:28px;font-weight:700;display:grid;place-items:center;margin:0 auto 14px}
+  .profile-name{text-align:center;font-size:17px;font-weight:700}
+  .profile-id{text-align:center;font-size:12px;color:var(--muted);margin-top:2px}
+  .profile-stage{text-align:center;margin-top:10px;background:var(--accent-light);color:var(--primary);padding:5px 12px;border-radius:20px;display:block;font-size:13px;font-weight:600}
+  .profile-meta{margin-top:16px;padding-top:16px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+  .profile-meta div{display:flex;justify-content:space-between;padding:4px 0}
+  .profile-meta strong{color:var(--text);font-weight:600}
+  .progress-overall{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+  .progress-overall h4{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+  .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--primary));transition:width 0.5s ease}
+  .progress-text{font-size:12px;color:var(--muted);margin-top:4px;text-align:right}
+  .quick-info-box{margin-top:14px;padding:10px 12px;background:#fff7ed;border-radius:8px;font-size:11px;color:#9a3412;border-left:3px solid var(--warning)}
+
+  /* Tabs */
+  .tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--card);padding:6px;border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow-x:auto}
+  .tab{padding:9px 14px;border-radius:7px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--muted);white-space:nowrap;transition:all .15s ease}
+  .tab:hover{background:var(--soft)}
+  .tab.active{background:var(--primary);color:white;font-weight:600}
+
+  /* Cards */
+  .card{background:var(--card);border-radius:12px;padding:22px;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:18px}
+  .card h2{font-size:16px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .card h2 .icon{width:30px;height:30px;border-radius:8px;background:var(--accent-light);color:var(--primary);display:grid;place-items:center;font-size:14px}
+  .card-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+
+  /* API call indicator */
+  .api-call{display:inline-block;font-family:monospace;font-size:10px;background:#1f2937;color:#34d399;padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle}
+
+  /* Stats */
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+  @media (max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
+  .stat-card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .stat-value{font-size:24px;font-weight:700;color:var(--text);margin-top:4px}
+  .stat-trend{font-size:11px;margin-top:2px}
+  .stat-trend.up{color:var(--success)}
+  .stat-trend.warn{color:var(--warning)}
+
+  /* AI cards */
+  .ai-suggestion-card{background:linear-gradient(135deg,#eef2ff,#e0e7ff);border-left:4px solid #6366f1;padding:14px 16px;border-radius:10px;margin-bottom:14px}
+  .ai-suggestion-card .label{font-size:11px;color:#4338ca;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .ai-suggestion-card .text{font-size:13px;color:#1e1b4b;margin-top:6px;line-height:1.6}
+
+  /* Radar */
+  .radar-wrap{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+  @media (max-width:880px){.radar-wrap{grid-template-columns:1fr}}
+  .gap-list{list-style:none}
+  .gap-list li{padding:10px 12px;border-radius:8px;margin-bottom:6px;border-left:4px solid var(--success);background:var(--soft);font-size:13px}
+  .gap-list li.warn{border-left-color:var(--warning)}
+  .gap-list li.danger{border-left-color:var(--danger)}
+  .gap-list li strong{display:block;margin-bottom:2px}
+  .gap-list li span{color:var(--muted);font-size:12px;display:block}
+
+  /* Timeline */
+  .timeline{position:relative;padding-left:30px}
+  .timeline::before{content:'';position:absolute;left:9px;top:0;bottom:0;width:2px;background:var(--border)}
+  .timeline-item{position:relative;padding-bottom:22px}
+  .timeline-item::before{content:'';position:absolute;left:-27px;top:6px;width:16px;height:16px;border-radius:50%;background:var(--card);border:3px solid var(--border)}
+  .timeline-item.done::before{border-color:var(--success);background:var(--success)}
+  .timeline-item.active::before{border-color:var(--accent);background:var(--accent);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(32,163,158,.4)}50%{box-shadow:0 0 0 8px rgba(32,163,158,0)}}
+  .timeline-time{font-size:11px;color:var(--muted)}
+  .timeline-title{font-weight:600;font-size:14px;margin:2px 0}
+  .timeline-desc{font-size:12px;color:var(--muted)}
+  .tag{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--soft);color:var(--muted)}
+  .tag.acgme{background:var(--accent-light);color:var(--primary)}
+
+  /* ILP Form */
+  .ilp-section{margin-bottom:16px}
+  .ilp-section label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+  .ilp-section .hint{font-size:11px;color:var(--muted);margin-bottom:6px;background:var(--accent-light);padding:6px 10px;border-radius:6px}
+  .ilp-section textarea,.ilp-section input,.ilp-section select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;resize:vertical}
+  .ilp-section textarea{min-height:70px}
+  .ilp-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:700px){.ilp-row{grid-template-columns:1fr}}
+  .btn{background:var(--primary);color:white;border:none;padding:10px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+  .btn.secondary{background:var(--accent)}
+  .btn.outline{background:transparent;color:var(--primary);border:1px solid var(--primary)}
+
+  .ai-plan{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #10b981;border-radius:10px;padding:18px;margin-top:16px}
+  .ai-plan h3{color:#065f46;font-size:14px;margin-bottom:10px}
+  .ai-plan-section{margin-bottom:12px}
+  .ai-plan-section strong{color:#065f46;font-size:12px;display:block;margin-bottom:4px}
+  .ai-plan-section p{font-size:13px;color:#064e3b;line-height:1.6}
+  .ai-plan-section ul{margin-left:20px;font-size:13px;color:#064e3b}
+
+  /* Coach */
+  .coach-wrap{display:grid;grid-template-columns:1fr 220px;gap:16px}
+  @media (max-width:880px){.coach-wrap{grid-template-columns:1fr}}
+  .chat-window{background:var(--soft);border-radius:10px;height:380px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+  .msg{padding:10px 14px;border-radius:12px;max-width:85%;font-size:13px;line-height:1.55}
+  .msg.coach{background:white;align-self:flex-start;border:1px solid var(--border)}
+  .msg.user{background:var(--primary);color:white;align-self:flex-end}
+  .msg.coach strong{color:var(--primary)}
+  .chat-input-row{display:flex;gap:8px;margin-top:10px}
+  .chat-input-row input{flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-size:13px;font-family:inherit}
+  .quick-prompts h4{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .quick-prompts button{display:block;width:100%;text-align:left;background:var(--soft);border:1px solid var(--border);padding:9px 12px;border-radius:8px;margin-bottom:6px;cursor:pointer;font-size:12px;color:var(--text);font-family:inherit;transition:all .15s ease}
+  .quick-prompts button:hover{background:var(--accent-light);border-color:var(--accent)}
+
+  /* Resources */
+  .resources-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .resource-item{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--soft)}
+  .resource-type{font-size:10px;padding:2px 8px;border-radius:4px;background:var(--accent-light);color:var(--primary);text-transform:uppercase;letter-spacing:.3px;display:inline-block;font-weight:600}
+  .resource-type.book{background:#fef3c7;color:#92400e}
+  .resource-type.skill{background:#dbeafe;color:#1e40af}
+  .resource-type.online{background:#ede9fe;color:#6d28d9}
+  .resource-title{font-size:13px;font-weight:600;margin:8px 0 4px}
+  .resource-desc{font-size:11px;color:var(--muted);line-height:1.5}
+  .resource-meta{font-size:11px;color:var(--muted);margin-top:8px}
+
+  /* Team */
+  .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .team-member{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--soft);cursor:pointer;transition:transform .15s ease}
+  .team-member:hover{transform:translateY(-2px);border-color:var(--primary)}
+  .team-member-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .team-member-name{font-size:13px;font-weight:600}
+  .team-member-stage{font-size:11px;color:var(--muted)}
+  .team-status{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;text-transform:uppercase}
+  .team-status.green{background:#d1fae5;color:#065f46}
+  .team-status.amber{background:#fef3c7;color:#92400e}
+  .team-status.red{background:#fee2e2;color:#991b1b}
+  .heatmap{display:grid;grid-template-columns:110px repeat(6,1fr);gap:4px;margin-top:12px;font-size:11px}
+  .heatmap .row-label{padding:6px;font-weight:600}
+  .heatmap .col-label{padding:6px;text-align:center;font-weight:600;color:var(--muted)}
+  .heatmap .cell{height:32px;border-radius:4px;display:grid;place-items:center;color:white;font-weight:600}
+  .lvl-1{background:#fee2e2;color:#991b1b}
+  .lvl-2{background:#fed7aa;color:#9a3412}
+  .lvl-3{background:#fde68a;color:#854d0e}
+  .lvl-4{background:#bbf7d0;color:#166534}
+  .lvl-5{background:#34d399;color:white}
+
+  .goal-bars{margin-top:12px}
+  .goal-row{display:grid;grid-template-columns:200px 1fr 50px;gap:10px;align-items:center;padding:6px 0;font-size:13px}
+  .goal-bar{height:18px;background:var(--accent-light);border-radius:3px;position:relative;overflow:hidden}
+  .goal-bar-fill{height:100%;background:var(--accent)}
+
+  .footer-note{margin-top:20px;padding:14px 18px;background:#fff7ed;border-left:4px solid var(--warning);border-radius:8px;font-size:12px;color:#9a3412}
+  .hidden{display:none !important}
+
+  .reflection-area{width:100%;min-height:110px;padding:12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical}
+  .reflection-prompt{background:var(--accent-light);padding:12px 14px;border-radius:8px;margin-bottom:10px;font-size:13px;color:var(--primary)}
+  .reflection-entry{border-left:3px solid var(--accent);padding:8px 12px;margin-bottom:8px;background:var(--soft);border-radius:0 8px 8px 0}
+  .reflection-entry .date{font-size:11px;color:var(--muted)}
+  .reflection-entry .text{font-size:12px;margin-top:2px}
+
+  /* Loading */
+  .loader{display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-card{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+
+  /* API badge in header */
+  .api-badge{font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(52,211,153,0.2);color:#34d399;font-family:monospace}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <h1>奇美 PGY 內科 個人化學習系統</h1>
+    <p>請使用人事號登入（demo 模擬 SSO）</p>
+    <label>人事號</label>
+    <input type="text" id="loginInput" placeholder="輸入 P10001 - P10006" onkeypress="if(event.key==='Enter')login()">
+    <button onclick="login()">登入 <span id="loginLoader" class="hidden"><span class="loader"></span></span></button>
+    <div class="login-helper">
+      <strong>測試帳號（demo 用）</strong>
+      <code>P10001</code> 學員A PGY1 ·
+      <code>P10002</code> 學員B PGY1 ·
+      <code>P10003</code> 學員C PGY1<br>
+      <code>P10004</code> 學員D PGY2 ·
+      <code>P10005</code> 學員E PGY2 ·
+      <code>P10006</code> 學員F PGY1<br><br>
+      <em>正式版會以院內 LDAP / Active Directory 進行 SSO 認證</em>
+    </div>
+    <div id="apiStatus" class="api-status">檢查後端連線中...</div>
+  </div>
+</div>
+
+<!-- MAIN APP (after login) -->
+<div id="mainApp" class="hidden">
+<header class="header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-logo">奇</div>
+      <div class="brand-text">
+        <h1>奇美 PGY 內科 個人化學習與職涯發展系統 <span class="api-badge">API CONNECTED</span></h1>
+        <p>Personal Learning &amp; Career Development System · v3 (real backend)</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="role-toggle">
+        <button class="active" data-role="self" onclick="switchRole('self')">學員視角</button>
+        <button data-role="mentor" onclick="switchRole('mentor')">臨床教師</button>
+        <button data-role="center" onclick="switchRole('center')">教學部</button>
+      </div>
+      <select id="employeeSelect" onchange="loadEmployee(this.value)"></select>
+      <button class="logout-btn" onclick="logout()">登出</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <!-- SELF VIEW -->
+  <div id="selfView">
+    <div class="grid-main">
+      <div class="profile-card" id="profileCard"><div class="loading-card"><span class="loader"></span> 載入中...</div></div>
+      <div>
+        <div class="tabs">
+          <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">儀表板</button>
+          <button class="tab" data-tab="ilp" onclick="switchTab('ilp')">ILP 個人化學習計畫</button>
+          <button class="tab" data-tab="map" onclick="switchTab('map')">學習地圖</button>
+          <button class="tab" data-tab="radar" onclick="switchTab('radar')">六大核心能力</button>
+          <button class="tab" data-tab="coach" onclick="switchTab('coach')">AI 教練</button>
+          <button class="tab" data-tab="resources" onclick="switchTab('resources')">院內學習資源</button>
+          <button class="tab" data-tab="courses" onclick="switchTab('courses')">📚 我的課程</button>
+          <button class="tab" data-tab="catalog" onclick="switchTab('catalog')">🔍 課程瀏覽</button>
+          <button class="tab" data-tab="reflection" onclick="switchTab('reflection')">反思日誌</button>
+        </div>
+
+        <div class="tab-content" data-content="dashboard">
+          <div class="stats-grid" id="statsGrid"></div>
+          <div id="aiSuggestion"></div>
+          <div class="card">
+            <h2><span class="icon">⚡</span> 本週重點 <span class="api-call">GET /api/employees/:id/dashboard</span></h2>
+            <div id="weeklyFocus"></div>
+          </div>
+          <div class="card">
+            <h2><span class="icon">📋</span> 本月規定須完成 <span class="api-call">GET /api/employees/:id/dashboard</span></h2>
+            <div id="monthlyRequirements"></div>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-content="ilp">
+          <div class="card">
+            <h2><span class="icon">📝</span> ILP 個人化學習計畫 <span class="api-call">GET / PUT /api/employees/:id/ilp</span></h2>
+            <div class="card-sub">填寫後，AI 將透過 <code>POST /api/ilp/generate-plan</code> 產出個人化建議</div>
+            <div id="ilpForm"><div class="loading-card"><span class="loader"></span> 載入中...</div></div>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-content="map">
+          <div class="card">
+            <h2><span class="icon">🗺️</span> PGY 內科訓練地圖 <span class="api-call">GET /api/employees/:id/milestones</span></h2>
+            <div class="timeline" id="timeline"></div>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-content="radar">
+          <div class="card">
+            <h2><span class="icon">📊</span> ACGME 六大核心能力 <span class="api-call">GET /api/employees/:id/competencies</span></h2>
+            <div class="radar-wrap">
+              <div><canvas id="radarChart"></canvas></div>
+              <ul class="gap-list" id="gapList"></ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-content="coach">
+          <div class="card">
+            <h2><span class="icon">🤖</span> AI 職涯教練 <span class="api-call">POST /api/coach/chat</span></h2>
+            <div class="card-sub">每則訊息會儲存到 <code>coach_messages</code> table，正式版串接 Claude API</div>
+            <div class="coach-wrap">
+              <div>
+                <div class="chat-window" id="chatWindow"></div>
+                <div class="chat-input-row">
+                  <input type="text" id="chatInput" placeholder="輸入問題..." onkeypress="if(event.key==='Enter') sendChat()">
+                  <button class="btn" onclick="sendChat()">送出</button>
+                </div>
+              </div>
+              <div class="quick-prompts">
+                <h4>常用對話</h4>
+                <button onclick="sendCannedChat('我想學會獨立放 CVC')">CVC 學習</button>
+                <button onclick="sendCannedChat('我想加強 POCUS')">POCUS 學習</button>
+                <button onclick="sendCannedChat('值班遇到 unstable 病人')">值班 unstable</button>
+                <button onclick="sendCannedChat('幫我反思這個月')">反思引導</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-content="resources">
+          <div class="card">
+            <h2><span class="icon">📚</span> 院內學習資源 <span class="api-call">GET /api/resources?employee_id=:id</span></h2>
+            <div class="card-sub">後端已依你的 ILP 與能力差距智能排序</div>
+            <div class="resources-grid" id="resourcesGrid"></div>
+          </div>
+        </div>
+
+        <!-- My Courses -->
+        <div class="tab-content hidden" data-content="courses">
+          <div class="card">
+            <h2><span class="icon">📚</span> 我的課程 <span class="api-call">GET /api/employees/:id/enrollments</span></h2>
+            <div class="card-sub">完成課程後，能力分數會自動更新到雷達圖、里程碑會變綠、本月規定會打勾</div>
+            <div id="myCoursesContent"><div class="loading-card"><span class="loader"></span> 載入中...</div></div>
+          </div>
+          <div class="card" id="completionToast" style="display:none">
+            <h2><span class="icon">✨</span> 上次完成課程的影響</h2>
+            <div id="completionToastContent"></div>
+          </div>
+        </div>
+
+        <!-- Course Catalog -->
+        <div class="tab-content hidden" data-content="catalog">
+          <div class="card">
+            <h2><span class="icon">🔍</span> 課程瀏覽 (4 種類型) <span class="api-call">GET /api/courses?employee_id=:id</span></h2>
+            <div class="card-sub">後端會依你的 ILP + 能力差距智能排序，含 🎯 圖示者為 ILP 對應課程</div>
+            <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+              <button class="btn outline" onclick="loadCatalog('')" id="filterAll">全部</button>
+              <button class="btn outline" onclick="loadCatalog('online')" id="filterOnline">線上課程</button>
+              <button class="btn outline" onclick="loadCatalog('skill')" id="filterSkill">技能中心</button>
+              <button class="btn outline" onclick="loadCatalog('in_person')" id="filterInPerson">實體課程</button>
+              <button class="btn outline" onclick="loadCatalog('external')" id="filterExternal">外部認證</button>
+            </div>
+            <div id="catalogList"><div class="loading-card"><span class="loader"></span> 載入中...</div></div>
+          </div>
+        </div>
+
+        <div class="tab-content hidden" data-content="reflection">
+          <div class="card">
+            <h2><span class="icon">📔</span> 反思日誌 <span class="api-call">GET / POST /api/employees/:id/reflections</span></h2>
+            <div class="reflection-prompt" id="reflectPrompt"></div>
+            <textarea class="reflection-area" id="reflectInput" placeholder="把這週的觀察、感受寫下來..."></textarea>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn" onclick="saveReflection()">儲存到資料庫</button>
+            </div>
+            <div id="reflectHistory" style="margin-top:16px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENTOR VIEW -->
+  <div id="mentorView" class="hidden">
+    <div class="card">
+      <h2><span class="icon">👩‍⚕️</span> 我帶的學員 <span class="api-call">GET /api/employees</span></h2>
+      <div class="team-grid" id="mentorTeamGrid"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">📲</span> 課程 QR Code 產生器 <span class="api-call">POST /api/courses/:id/qr-token</span></h2>
+      <div class="card-sub">產生 QR Code 給學員手機掃描簽到（30 分鐘有效）</div>
+      <div id="instructorQrCourseList"><div class="loading-card"><span class="loader"></span> 載入課程中...</div></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">💬</span> 學員反思 / 給予回饋 <span class="api-call">GET /api/instructor/pending-reflections</span></h2>
+      <div class="card-sub">下拉選擇學員可只看單人；回饋送出後立即同步到學員的「反思日誌」頁面</div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+        <label style="font-size:13px;font-weight:600">選擇學員：</label>
+        <select id="reflectionStudentFilter" onchange="loadPendingReflections()" style="padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;min-width:220px"><option value="">全部學員</option></select>
+        <span id="reflectionFilterStats" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div id="pendingReflectionsList"><div class="loading-card"><span class="loader"></span> 載入中...</div></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">💡</span> AI 教學洞察 <span class="api-call">GET /api/analytics/insights</span></h2>
+      <div id="mentorInsights"></div>
+    </div>
+  </div>
+
+  <!-- CENTER VIEW -->
+  <div id="centerView" class="hidden">
+    <div class="card">
+      <h2><span class="icon">🏫</span> 全體學員 <span class="api-call">GET /api/employees</span></h2>
+      <div class="team-grid" id="allStudentsGrid"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">🌡️</span> 全體能力熱圖 <span class="api-call">GET /api/analytics/heatmap</span></h2>
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">📈</span> ILP 共通需求分析 <span class="api-call">GET /api/analytics/common-goals</span></h2>
+      <div class="goal-bars" id="goalBars"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">🎯</span> 教學部智能洞察 <span class="api-call">GET /api/analytics/insights</span></h2>
+      <div id="centerInsights"></div>
+    </div>
+    <div class="card">
+      <h2><span class="icon">➕</span> 新增課程 <span class="api-call">POST /api/courses</span></h2>
+      <div class="card-sub">教學部新增課程，提交後立即出現在「課程瀏覽」供學員選擇</div>
+      <div id="newCourseForm"></div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    ✅ 此版本透過 REST API 從 SQLite 後端讀寫資料。所有按鈕（儲存 ILP、儲存反思、AI 教練對話、AI 產生計畫）都會打到真實 API 並寫入資料庫。<br>
+    正式環境只需替換：(1) SQLite → PostgreSQL/SQL Server (2) Mock SSO → LDAP/AD (3) Mock Coach → Claude API (4) Mock 資料 → 串接奇美 e-portfolio / HR 系統。
+  </div>
+</div>
+</div>
+
+<script>
+/* ====================================================
+   API client
+==================================================== */
+const API_BASE = (window.location.protocol === 'file:') ? 'http://localhost:8000/api' : '/api';
+
+const api = {
+  async req(path, opts = {}) {
+    const url = `${API_BASE}${path}`;
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`API ${res.status}: ${t}`);
+    }
+    return res.json();
+  },
+  health() { return this.req('/health'); },
+  login(employee_id) { return this.req('/auth/login', { method: 'POST', body: JSON.stringify({ employee_id }) }); },
+  listEmployees() { return this.req('/employees'); },
+  getEmployee(id) { return this.req(`/employees/${id}`); },
+  getDashboard(id) { return this.req(`/employees/${id}/dashboard`); },
+  getCompetencies(id) { return this.req(`/employees/${id}/competencies`); },
+  getILP(id) { return this.req(`/employees/${id}/ilp`); },
+  saveILP(id, data) { return this.req(`/employees/${id}/ilp`, { method: 'PUT', body: JSON.stringify(data) }); },
+  generatePlan(id) { return this.req('/ilp/generate-plan', { method: 'POST', body: JSON.stringify({ employee_id: id }) }); },
+  getMilestones(id) { return this.req(`/employees/${id}/milestones`); },
+  getReflections(id) { return this.req(`/employees/${id}/reflections`); },
+  addReflection(id, content) { return this.req(`/employees/${id}/reflections`, { method: 'POST', body: JSON.stringify({ content }) }); },
+  getResources(id) { return this.req(`/resources?employee_id=${id}`); },
+  chat(employee_id, message) { return this.req('/coach/chat', { method: 'POST', body: JSON.stringify({ employee_id, message }) }); },
+  getChatHistory(id) { return this.req(`/coach/history/${id}`); },
+  heatmap() { return this.req('/analytics/heatmap'); },
+  commonGoals() { return this.req('/analytics/common-goals'); },
+  insights() { return this.req('/analytics/insights'); },
+  // Reflection feedback
+  reflectionsWithFeedback(employee_id) { return this.req(`/employees/${employee_id}/reflections-with-feedback`); },
+  pendingReflections() { return this.req('/instructor/pending-reflections'); },
+  createFeedback(reflection_id, employee_id, content, rating) {
+    return this.req('/reflection-feedbacks', { method: 'POST', body: JSON.stringify({ reflection_id, employee_id, instructor: '示範教師', content, rating }) });
+  },
+  // Course creation
+  createCourse(course) { return this.req('/courses', { method: 'POST', body: JSON.stringify(course) }); },
+  deleteCourse(id) { return this.req(`/courses/${id}`, { method: 'DELETE' }); },
+  // Courses
+  listCourses(employee_id, type) {
+    const q = [];
+    if (employee_id) q.push('employee_id=' + employee_id);
+    if (type) q.push('type_filter=' + type);
+    return this.req('/courses' + (q.length ? '?' + q.join('&') : ''));
+  },
+  getCourse(id) { return this.req(`/courses/${id}`); },
+  enroll(course_id, employee_id) { return this.req(`/courses/${course_id}/enroll`, { method: 'POST', body: JSON.stringify({ employee_id }) }); },
+  myEnrollments(employee_id) { return this.req(`/employees/${employee_id}/enrollments`); },
+  cancelEnrollment(enrollment_id) { return this.req(`/enrollments/${enrollment_id}`, { method: 'DELETE' }); },
+  createQrToken(course_id, instructor) { return this.req(`/courses/${course_id}/qr-token`, { method: 'POST', body: JSON.stringify({ course_id, issued_by: instructor, valid_minutes: 30 }) }); },
+  qrCheckin(token, employee_id) { return this.req('/qr/checkin', { method: 'POST', body: JSON.stringify({ token, employee_id }) }); },
+  completeOnline(enrollment_id, employee_id, self_reflection) { return this.req(`/enrollments/${enrollment_id}/complete-online`, { method: 'POST', body: JSON.stringify({ employee_id, self_reflection }) }); },
+  instructorSignoff(enrollment_id, instructor_feedback, final_score) { return this.req(`/enrollments/${enrollment_id}/instructor-signoff`, { method: 'POST', body: JSON.stringify({ instructor_feedback, final_score }) }); },
+  uploadCert(enrollment_id, certificate_url, final_score) { return this.req(`/enrollments/${enrollment_id}/upload-certificate`, { method: 'POST', body: JSON.stringify({ certificate_url, final_score }) }); },
+};
+
+const ACGME_LABELS = { PC: '病人照護 (PC)', MK: '醫學知識 (MK)', PBLI: '從工作中學習 (PBLI)', ICS: '人際與溝通 (ICS)', Prof: '專業素養 (Prof)', SBP: '系統性實踐 (SBP)' };
+const DIMS = ['PC', 'MK', 'PBLI', 'ICS', 'Prof', 'SBP'];
+
+/* ====================================================
+   State
+==================================================== */
+let currentEmployeeId = null;
+let currentRole = 'self';
+let radarChartInstance = null;
+let employeesCache = null;
+
+/* ====================================================
+   API Health Check on Load
+==================================================== */
+async function checkApi() {
+  const status = document.getElementById('apiStatus');
+  try {
+    await api.health();
+    status.textContent = '✅ 後端 API 連線正常';
+    status.className = 'api-status ok';
+  } catch (e) {
+    status.textContent = '❌ 無法連線後端 (請先執行 python main.py)';
+    status.className = 'api-status err';
+  }
+}
+checkApi();
+
+/* ====================================================
+   Login
+==================================================== */
+async function login() {
+  const id = document.getElementById('loginInput').value.trim();
+  if (!id) { alert('請輸入人事號'); return; }
+  const loader = document.getElementById('loginLoader');
+  loader.classList.remove('hidden');
+  try {
+    const result = await api.login(id);
+    sessionStorage.setItem('chimei_token', result.token);  // demo only - 不要在 localStorage 存 token
+    currentEmployeeId = id;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    await initApp();
+  } catch (e) {
+    alert('登入失敗：' + e.message);
+  } finally {
+    loader.classList.add('hidden');
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('chimei_token');
+  currentEmployeeId = null;
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('loginInput').value = '';
+}
+
+/* ====================================================
+   Init
+==================================================== */
+async function initApp() {
+  employeesCache = await api.listEmployees();
+  const sel = document.getElementById('employeeSelect');
+  sel.innerHTML = '';
+  employeesCache.forEach(e => {
+    const opt = document.createElement('option');
+    opt.value = e.employee_id;
+    opt.textContent = `${e.employee_id}  ${e.name}  (${e.stage})`;
+    sel.appendChild(opt);
+  });
+  sel.value = currentEmployeeId;
+  await loadEmployee(currentEmployeeId);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('hidden', c.dataset.content !== tab));
+  if (tab === 'radar') renderRadar();
+  if (tab === 'map') loadMilestones();
+  if (tab === 'resources') loadResources();
+  if (tab === 'reflection') loadReflections();
+  if (tab === 'coach') loadCoachHistory();
+  if (tab === 'courses') loadMyCourses();
+  if (tab === 'catalog') loadCatalog();
+}
+
+async function switchRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-toggle button').forEach(b => b.classList.toggle('active', b.dataset.role === role));
+  document.getElementById('selfView').classList.toggle('hidden', role !== 'self');
+  document.getElementById('mentorView').classList.toggle('hidden', role !== 'mentor');
+  document.getElementById('centerView').classList.toggle('hidden', role !== 'center');
+  if (role === 'mentor') { await renderMentorView(); loadPendingReflections(); loadInstructorQrCourseList(); }
+  if (role === 'center') { await renderCenterView(); renderNewCourseForm(); }
+}
+
+async function loadEmployee(id) {
+  currentEmployeeId = id;
+  try {
+    const data = await api.getDashboard(id);
+    renderProfile(data);
+    renderDashboard(data);
+  } catch (e) {
+    alert('載入失敗：' + e.message);
+  }
+}
+
+/* ====================================================
+   Profile
+==================================================== */
+function renderProfile(data) {
+  const e = data.employee;
+  const ilp = data.ilp || {};
+  document.getElementById('profileCard').innerHTML = `
+    <div class="avatar">${e.avatar || e.name[0]}</div>
+    <div class="profile-name">${e.name}</div>
+    <div class="profile-id">人事號 ${e.employee_id} · ${e.gender || ''}</div>
+    <div style="margin-top:10px"><span class="profile-stage">${e.stage}</span></div>
+    <div class="profile-meta">
+      <div><span>訓練科</span><strong style="font-size:11px">${e.dept || '-'}</strong></div>
+      <div><span>當前進度</span><strong>${e.month || '-'}</strong></div>
+      <div><span>導師</span><strong>${e.mentor || '-'}</strong></div>
+    </div>
+    <div class="progress-overall">
+      <h4>${e.stage} 訓練完成度</h4>
+      <div class="progress-bar"><div class="progress-bar-fill" style="width:${e.overall_progress}%"></div></div>
+      <div class="progress-text">${e.overall_progress}%</div>
+    </div>
+    ${ilp.goal ? `<div class="quick-info-box">💡 ILP 學習目標：<br><strong>${ilp.goal}</strong>${ilp.timeline ? `<br>預計 ${ilp.timeline} 達成` : ''}</div>` : ''}
+  `;
+}
+
+/* ====================================================
+   Dashboard
+==================================================== */
+function renderDashboard(data) {
+  const comps = data.competencies;
+  const bench = data.benchmarks;
+  const gaps = DIMS.map(d => bench[d] - (comps[d] || 0));
+  const biggestGapIdx = gaps.indexOf(Math.max(...gaps));
+  const onTrack = DIMS.filter(d => (comps[d] || 0) >= bench[d] - 0.3).length;
+  const totalReq = data.monthly_requirements.reduce((a, b) => a + b.total, 0);
+  const doneReq = data.monthly_requirements.reduce((a, b) => a + b.done, 0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">訓練完成度</div>
+      <div class="stat-value">${data.employee.overall_progress}%</div>
+      <div class="stat-trend up">↑ 較上月 +8%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">本月規定完成</div>
+      <div class="stat-value">${doneReq}/${totalReq}</div>
+      <div class="stat-trend ${doneReq/totalReq >= 0.7 ? 'up' : 'warn'}">${Math.round(doneReq/totalReq*100)}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">能力達標項目</div>
+      <div class="stat-value">${onTrack} / 6</div>
+      <div class="stat-trend ${onTrack >= 4 ? 'up' : 'warn'}">${onTrack >= 4 ? '良好' : '需加強'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">最大能力缺口</div>
+      <div class="stat-value" style="font-size:14px;line-height:2.4">${ACGME_LABELS[DIMS[biggestGapIdx]].split(' (')[0]}</div>
+      <div class="stat-trend warn">差 ${gaps[biggestGapIdx].toFixed(1)} 分</div>
+    </div>
+  `;
+
+  const ilp = data.ilp;
+  document.getElementById('aiSuggestion').innerHTML = `
+    <div class="ai-suggestion-card">
+      <div class="label">🤖 AI 智能建議 (來自後端 dashboard 計算)</div>
+      <div class="text">
+        ${data.employee.name} 你好，目前你在「<strong>${ACGME_LABELS[DIMS[biggestGapIdx]]}</strong>」上低於 <strong>${data.employee.stage}</strong> 階段標竿 ${gaps[biggestGapIdx].toFixed(1)} 分。
+        ${ilp && ilp.goal ? `你的 ILP 學習目標是「<strong>${ilp.goal}</strong>」。` : ''}
+        建議至「院內學習資源」頁查看智能匹配的資源，或至「AI 教練」開啟對話。
+      </div>
+    </div>
+  `;
+
+  document.getElementById('weeklyFocus').innerHTML = data.weekly_focus.map(f => `
+    <div style="padding:10px 12px;border-left:4px solid ${f.urgency === 'high' ? 'var(--danger)' : 'var(--accent)'};background:var(--soft);border-radius:0 8px 8px 0;margin-bottom:8px">
+      <div style="font-size:13px;font-weight:600">${f.title}</div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <span class="tag acgme">${f.tag}</span>
+        ${f.urgency === 'high' ? '<span class="tag" style="background:#fee2e2;color:#991b1b">高優先</span>' : ''}
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('monthlyRequirements').innerHTML = data.monthly_requirements.map(r => {
+    const pct = r.total > 0 ? (r.done / r.total) * 100 : 0;
+    const color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+    return `
+      <div style="padding:8px 12px;background:var(--soft);border-radius:8px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;align-items:center">
+          <span>${r.item}</span>
+          <strong style="color:${color};font-size:12px">${r.done} / ${r.total}</strong>
+        </div>
+        <div class="progress-bar" style="margin-top:4px"><div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>
+    `;
+  }).join('');
+
+  // Render ILP form when dashboard loads
+  renderILPForm(ilp);
+}
+
+/* ====================================================
+   ILP Form
+==================================================== */
+function renderILPForm(ilp) {
+  ilp = ilp || {};
+  document.getElementById('ilpForm').innerHTML = `
+    <div class="ilp-section">
+      <label>① 學習目標</label>
+      <div class="hint">e.g. 提升急診處理能力，特別是 CPR 和創傷處理</div>
+      <textarea id="ilp_goal">${ilp.goal || ''}</textarea>
+    </div>
+    <div class="ilp-section">
+      <label>② 學習動機</label>
+      <textarea id="ilp_motivation">${ilp.motivation || ''}</textarea>
+    </div>
+    <div class="ilp-row">
+      <div class="ilp-section">
+        <label>③ 學習策略</label>
+        <textarea id="ilp_strategy">${ilp.strategy || ''}</textarea>
+      </div>
+      <div class="ilp-section">
+        <label>④ 學習資源</label>
+        <textarea id="ilp_resources">${ilp.resources || ''}</textarea>
+      </div>
+    </div>
+    <div class="ilp-row">
+      <div class="ilp-section">
+        <label>⑤ 可能困難</label>
+        <textarea id="ilp_barriers">${ilp.barriers || ''}</textarea>
+      </div>
+      <div class="ilp-section">
+        <label>⑥ 評估指標</label>
+        <textarea id="ilp_kpi">${ilp.kpi || ''}</textarea>
+      </div>
+    </div>
+    <div class="ilp-row">
+      <div class="ilp-section">
+        <label>⑦ 預計時程</label>
+        <input type="text" id="ilp_timeline" value="${ilp.timeline || ''}">
+      </div>
+      <div class="ilp-section">
+        <label>⑧ E-portfolio 滿意度 (1-5)</label>
+        <select id="ilp_rating">
+          ${[1,2,3,4,5].map(n => `<option value="${n}" ${n==(ilp.eportfolio_rating||3)?'selected':''}>${n}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn" onclick="saveILP()">💾 儲存 ILP（寫入資料庫）</button>
+      <button class="btn secondary" onclick="generateAIPlan()">🤖 AI 產生個人化學習計畫</button>
+    </div>
+    <div id="aiPlanOutput"></div>
+  `;
+}
+
+async function saveILP() {
+  const data = {
+    goal: document.getElementById('ilp_goal').value,
+    motivation: document.getElementById('ilp_motivation').value,
+    strategy: document.getElementById('ilp_strategy').value,
+    resources: document.getElementById('ilp_resources').value,
+    barriers: document.getElementById('ilp_barriers').value,
+    kpi: document.getElementById('ilp_kpi').value,
+    timeline: document.getElementById('ilp_timeline').value,
+    eportfolio_rating: parseInt(document.getElementById('ilp_rating').value),
+  };
+  try {
+    await api.saveILP(currentEmployeeId, data);
+    alert('✅ 已儲存到資料庫');
+    // Reload dashboard so the ILP shows in profile
+    const dash = await api.getDashboard(currentEmployeeId);
+    renderProfile(dash);
+  } catch (e) {
+    alert('儲存失敗：' + e.message);
+  }
+}
+
+async function generateAIPlan() {
+  const out = document.getElementById('aiPlanOutput');
+  out.innerHTML = '<div class="loading-card"><span class="loader"></span> AI 計算中...</div>';
+  try {
+    // Save first to ensure backend has latest data
+    await saveILP();
+    const plan = await api.generatePlan(currentEmployeeId);
+    out.innerHTML = `
+      <div class="ai-plan">
+        <h3>🤖 AI 產生個人化學習計畫 <span style="font-family:monospace;font-size:11px;color:#065f46;background:white;padding:2px 6px;border-radius:4px;margin-left:6px">POST /api/ilp/generate-plan</span></h3>
+        <div class="ai-plan-section">
+          <strong>1. 對應 ACGME 核心能力</strong>
+          <p>${plan.competency_tag}</p>
+        </div>
+        <div class="ai-plan-section">
+          <strong>2. ${plan.kpi_assessment.is_weak ? '⚠️ KPI 過於模糊，建議改為 SMART 版本' : '✅ KPI 已具體'}</strong>
+          ${plan.kpi_assessment.is_weak ? `<p>原本：「${plan.kpi_assessment.original || '無'}」<br>建議：「<strong>${plan.kpi_assessment.smart_version}</strong>」</p>` : `<p>${plan.kpi_assessment.original}</p>`}
+        </div>
+        <div class="ai-plan-section">
+          <strong>3. 建議的學習路徑</strong>
+          <ul>${plan.milestones.map(m => `<li>${m}</li>`).join('')}</ul>
+        </div>
+        <div class="ai-plan-section">
+          <strong>4. 對應的院內資源（已自動匹配）</strong>
+          <ul>${plan.matched_resources.length ? plan.matched_resources.map(r => `<li><strong>${r.title}</strong> — ${r.description} (${r.meta})</li>`).join('') : '<li>未找到完全匹配的資源，建議聯繫導師</li>'}</ul>
+        </div>
+        <div class="ai-plan-section">
+          <strong>5. 障礙因應建議</strong>
+          <p>${plan.barrier_advice}</p>
+        </div>
+        <div class="ai-plan-section">
+          <strong>6. 與每月規定的整合</strong>
+          <p>${plan.monthly_integration}</p>
+        </div>
+      </div>`;
+  } catch (e) {
+    out.innerHTML = `<div style="color:var(--danger);padding:12px">產生失敗：${e.message}</div>`;
+  }
+}
+
+/* ====================================================
+   Milestones (Learning Map)
+==================================================== */
+async function loadMilestones() {
+  try {
+    const items = await api.getMilestones(currentEmployeeId);
+    document.getElementById('timeline').innerHTML = items.map(i => `
+      <div class="timeline-item ${i.status}">
+        <div class="timeline-time">${i.status === 'done' ? '已完成' : i.status === 'active' ? '進行中' : '預計'}</div>
+        <div class="timeline-title">${i.title}</div>
+        ${i.description ? `<div class="timeline-desc">${i.description}</div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    document.getElementById('timeline').innerHTML = `<div style="color:var(--danger)">${e.message}</div>`;
+  }
+}
+
+/* ====================================================
+   Radar
+==================================================== */
+async function renderRadar() {
+  try {
+    const data = await api.getCompetencies(currentEmployeeId);
+    const ctx = document.getElementById('radarChart');
+    if (radarChartInstance) radarChartInstance.destroy();
+    radarChartInstance = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: DIMS.map(d => ACGME_LABELS[d]),
+        datasets: [
+          { label: '我目前', data: DIMS.map(d => data.current[d] || 0), backgroundColor: 'rgba(13,79,108,0.18)', borderColor: 'rgba(13,79,108,1)', borderWidth: 2, pointRadius: 4 },
+          { label: `${data.stage} 標竿`, data: DIMS.map(d => data.benchmark[d] || 0), backgroundColor: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,1)', borderWidth: 2, borderDash: [6,4], pointRadius: 3 }
+        ]
+      },
+      options: { responsive: true, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }, plugins: { legend: { position: 'bottom' } } }
+    });
+
+    const gaps = DIMS.map(d => ({ name: ACGME_LABELS[d], gap: (data.benchmark[d] || 0) - (data.current[d] || 0), current: data.current[d] || 0, target: data.benchmark[d] || 0 })).sort((a, b) => b.gap - a.gap);
+    document.getElementById('gapList').innerHTML = gaps.map(g => {
+      const cls = g.gap >= 0.7 ? 'danger' : g.gap >= 0.3 ? 'warn' : '';
+      const action = g.gap >= 0.7 ? '建議本月優先補強' : g.gap >= 0.3 ? '需要持續累積' : '已達標，維持表現';
+      return `<li class="${cls}"><strong>${g.name}</strong><span>目前 ${g.current.toFixed(1)} / 標竿 ${g.target.toFixed(1)} （差 ${g.gap.toFixed(1)}）</span><span>📌 ${action}</span></li>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ====================================================
+   Resources
+==================================================== */
+async function loadResources() {
+  try {
+    const list = await api.getResources(currentEmployeeId);
+    document.getElementById('resourcesGrid').innerHTML = list.map(r => {
+      const typeCls = r.type === 'book' ? 'book' : r.type === 'skill' ? 'skill' : r.type === 'online' ? 'online' : '';
+      return `
+        <div class="resource-item">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <span class="resource-type ${typeCls}">${r.type}</span>
+            <span class="tag acgme">${r.tag}</span>
+            ${r.matches_ilp ? '<span style="font-size:11px;color:var(--accent);font-weight:600">🎯 對應你的 ILP</span>' : ''}
+          </div>
+          <div class="resource-title">${r.title}</div>
+          <div class="resource-desc">${r.description}</div>
+          <div class="resource-meta">📅 ${r.meta}</div>
+        </div>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ====================================================
+   Reflection
+==================================================== */
+async function loadReflections() {
+  try {
+    const list = await api.reflectionsWithFeedback(currentEmployeeId);
+    const stage = (employeesCache.find(e => e.employee_id === currentEmployeeId) || {}).stage;
+    const prompts = {
+      'PGY1': '本週問題：本週讓你印象最深的病人是誰？這個經驗教會你什麼可以用 ACGME 六大核心其中一項來描述？',
+      'PGY2 內科組': '本週問題：作為 PGY2 內科組，你這週有沒有一刻感受到「我已經比 PGY1 階段更穩」？'
+    };
+    document.getElementById('reflectPrompt').textContent = prompts[stage] || '本週問題：寫下你這週的學習與反思';
+    document.getElementById('reflectInput').value = '';
+
+    document.getElementById('reflectHistory').innerHTML = list.length === 0 ? '<p style="font-size:12px;color:var(--muted)">尚無反思紀錄</p>' :
+      `<h4 style="font-size:12px;color:var(--muted);margin-bottom:8px">過往反思 + 講師回饋</h4>` +
+      list.map(r => {
+        const fbHtml = (r.feedbacks && r.feedbacks.length) ? r.feedbacks.map(fb => `
+          <div style="margin-top:8px;background:#eef2ff;border-left:3px solid #6366f1;padding:8px 12px;border-radius:0 8px 8px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#4338ca;font-weight:600">
+              <span>💬 ${fb.instructor}</span>
+              <span>${fb.rating ? '⭐'.repeat(fb.rating) : ''} · ${fb.created_at.substring(0,10)}</span>
+            </div>
+            <div style="font-size:13px;color:#1e1b4b;margin-top:4px">${fb.content}</div>
+          </div>`).join('') : '<div style="font-size:11px;color:var(--muted);margin-top:6px;font-style:italic">尚未獲得講師回饋</div>';
+        return `<div class="reflection-entry"><div class="date">${r.created_at.substring(0,10)}</div><div class="text">${r.content}</div>${fbHtml}</div>`;
+      }).join('');
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function saveReflection() {
+  const txt = document.getElementById('reflectInput').value.trim();
+  if (!txt) { alert('請先寫下本週反思'); return; }
+  try {
+    await api.addReflection(currentEmployeeId, txt);
+    alert('✅ 已儲存到資料庫');
+    await loadReflections();
+  } catch (e) {
+    alert('儲存失敗：' + e.message);
+  }
+}
+
+/* ====================================================
+   Coach
+==================================================== */
+async function loadCoachHistory() {
+  try {
+    const history = await api.getChatHistory(currentEmployeeId);
+    const cw = document.getElementById('chatWindow');
+    if (history.length === 0) {
+      cw.innerHTML = `<div class="msg coach">你好，我是你的 AI 職涯教練。我會記住每一次對話。試試右側「常用對話」或直接輸入問題。</div>`;
+    } else {
+      cw.innerHTML = history.map(m => `<div class="msg ${m.role}">${m.content}</div>`).join('');
+    }
+    cw.scrollTop = cw.scrollHeight;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const txt = input.value.trim();
+  if (!txt) return;
+  await sendCannedChat(txt);
+  input.value = '';
+}
+
+async function sendCannedChat(message) {
+  const cw = document.getElementById('chatWindow');
+  const userDiv = document.createElement('div');
+  userDiv.className = 'msg user';
+  userDiv.textContent = message;
+  cw.appendChild(userDiv);
+  cw.scrollTop = cw.scrollHeight;
+
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg coach';
+  loadingDiv.innerHTML = '<span class="loader"></span> 思考中...';
+  cw.appendChild(loadingDiv);
+  cw.scrollTop = cw.scrollHeight;
+
+  try {
+    const resp = await api.chat(currentEmployeeId, message);
+    loadingDiv.innerHTML = resp.content;
+  } catch (e) {
+    loadingDiv.innerHTML = '錯誤：' + e.message;
+  }
+  cw.scrollTop = cw.scrollHeight;
+}
+
+/* ====================================================
+   Mentor / Center views
+==================================================== */
+async function renderMentorView() {
+  try {
+    const list = employeesCache;
+    document.getElementById('mentorTeamGrid').innerHTML = list.map(m => {
+      const statusLabel = { green: '健康', amber: '需關注', red: '需介入' }[m.team_status] || '健康';
+      return `
+        <div class="team-member" onclick="loadEmployee('${m.employee_id}'); switchRole('self');">
+          <div class="team-member-header">
+            <div>
+              <div class="team-member-name">${m.name}</div>
+              <div class="team-member-stage">${m.stage}</div>
+            </div>
+            <span class="team-status ${m.team_status}">${statusLabel}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-bar-fill" style="width:${m.overall_progress}%"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">${m.month || ''} · ${m.overall_progress}%</div>
+        </div>`;
+    }).join('');
+
+    const insights = await api.insights();
+    const html = `
+      <div class="ai-suggestion-card">
+        <div class="label">🚨 需介入學員 (${insights.students_need_attention.length} 位)</div>
+        <div class="text">${insights.students_need_attention.map(s => `<strong>${s.name}</strong> (${s.stage}, ${s.overall_progress}%)`).join('、')}</div>
+      </div>
+      <div class="ai-suggestion-card">
+        <div class="label">⚠️ KPI 模糊的 ILP (${insights.weak_kpi_count} 筆)</div>
+        <div class="text">${insights.weak_kpi_examples.map(s => `<strong>${s.name}</strong> 寫「${s.kpi}」`).join('、')}<br>建議在下次 PGY 始業式加入 SMART 目標工作坊</div>
+      </div>`;
+    document.getElementById('mentorInsights').innerHTML = html;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function renderCenterView() {
+  try {
+    const list = employeesCache;
+    document.getElementById('allStudentsGrid').innerHTML = list.map(m => {
+      const statusLabel = { green: '健康', amber: '需關注', red: '需介入' }[m.team_status] || '健康';
+      return `
+        <div class="team-member" onclick="loadEmployee('${m.employee_id}'); switchRole('self');">
+          <div class="team-member-header">
+            <div>
+              <div class="team-member-name">${m.name}</div>
+              <div class="team-member-stage">${m.stage} · ${m.dept || ''}</div>
+            </div>
+            <span class="team-status ${m.team_status}">${statusLabel}</span>
+          </div>
+          <div class="progress-bar"><div class="progress-bar-fill" style="width:${m.overall_progress}%"></div></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">${m.overall_progress}%</div>
+        </div>`;
+    }).join('');
+
+    // Heatmap
+    const hm = await api.heatmap();
+    let html = '<div></div>' + DIMS.map(d => `<div class="col-label">${d}</div>`).join('');
+    hm.forEach(s => {
+      html += `<div class="row-label">${s.name}<br><span style="font-size:10px;color:var(--muted);font-weight:normal">${s.stage}</span></div>`;
+      DIMS.forEach(d => {
+        const v = s.competencies[d] || 0;
+        const lvl = Math.max(1, Math.min(5, Math.round(v)));
+        html += `<div class="cell lvl-${lvl}">${v.toFixed(1)}</div>`;
+      });
+    });
+    document.getElementById('heatmap').innerHTML = html;
+
+    // Goals
+    const goals = await api.commonGoals();
+    document.getElementById('goalBars').innerHTML = goals.map(g => {
+      const pct = g.total ? (g.count / g.total) * 100 : 0;
+      return `<div class="goal-row">
+        <span>${g.goal}</span>
+        <div class="goal-bar"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
+        <span style="text-align:right;color:var(--muted);font-size:12px">${g.count}/${g.total}</span>
+      </div>`;
+    }).join('');
+
+    // Insights
+    const ins = await api.insights();
+    document.getElementById('centerInsights').innerHTML = `
+      <div class="ai-suggestion-card">
+        <div class="label">📊 共通需求洞察 (即時計算)</div>
+        <div class="text">
+          ${goals[0].goal} 與 ${goals[1].goal} 為最大共通需求 (${goals[0].count + goals[1].count} 位學員提及)。
+          建議規劃「PGY 季度急救聯合演練 + Procedure 工作坊」一次涵蓋多數需求。
+        </div>
+      </div>
+      <div class="ai-suggestion-card">
+        <div class="label">🎯 KPI 模糊問題</div>
+        <div class="text">
+          目前 <strong>${ins.weak_kpi_count}</strong> 位學員的 KPI 過於模糊（含「無」「.」等）。
+          建議在 PGY 始業式加入「SMART 目標 + ILP 撰寫」工作坊。
+        </div>
+      </div>`;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+/* ====================================================
+   COURSES (我的課程 + 課程瀏覽)
+==================================================== */
+const COURSE_TYPE_LABEL = {online: '線上課程', skill: '技能中心', in_person: '實體課程', external: '外部認證'};
+const COURSE_TYPE_COLOR = {online: '#6d28d9', skill: '#1e40af', in_person: '#0d4f6c', external: '#92400e'};
+
+async function loadMyCourses() {
+  const wrap = document.getElementById('myCoursesContent');
+  wrap.innerHTML = '<div class="loading-card"><span class="loader"></span> 載入課程中...</div>';
+  try {
+    const list = await api.myEnrollments(currentEmployeeId);
+    if (list.length === 0) {
+      wrap.innerHTML = '<p style="color:var(--muted);font-size:13px">你尚未報名任何課程，請至「課程瀏覽」報名。</p>';
+      return;
+    }
+    const groups = { in_progress: [], registered: [], completed: [], cancelled: [] };
+    list.forEach(e => (groups[e.status] || groups.registered).push(e));
+    const renderGroup = (label, items, color) => items.length === 0 ? '' :
+      `<h3 style="font-size:13px;color:${color};margin:14px 0 8px">${label} (${items.length})</h3>${items.map(e => renderEnrollmentCard(e)).join('')}`;
+    wrap.innerHTML =
+      renderGroup('🔥 進行中 / 已簽到', groups.in_progress, '#0d4f6c') +
+      renderGroup('📋 已報名 (尚未開始)', groups.registered, '#f59e0b') +
+      renderGroup('✅ 已完成', groups.completed, '#10b981') +
+      renderGroup('❌ 已取消', groups.cancelled, '#6b7280');
+  } catch (e) { wrap.innerHTML = `<div style="color:var(--danger)">載入失敗：${e.message}</div>`; }
+}
+
+function renderEnrollmentCard(e) {
+  const typeColor = COURSE_TYPE_COLOR[e.type] || '#6b7280';
+  const upliftStr = Object.entries(e.competency_uplift).map(([k, v]) => `${k}+${v}`).join(' / ');
+  const statusBadge = {
+    registered: `<span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">已報名</span>`,
+    in_progress: `<span style="background:#dbeafe;color:#1e40af;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">進行中</span>`,
+    completed: `<span style="background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">✅ 已完成</span>`,
+    cancelled: `<span style="background:#f3f4f6;color:#6b7280;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600">已取消</span>`,
+  }[e.status];
+  return `<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;background:var(--soft)">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:10px;background:${typeColor}22;color:${typeColor};padding:2px 8px;border-radius:4px;font-weight:600">${COURSE_TYPE_LABEL[e.type]}</span>
+          ${statusBadge}
+        </div>
+        <div style="font-weight:600;font-size:14px">${e.title}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${e.location || ''} · ${e.instructor || ''}</div>
+        <div style="font-size:11px;color:var(--accent);margin-top:4px">完成可加：${upliftStr} ｜ ${e.credit_hours || 0} 學分</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:start">${renderActionButtons(e)}</div>
+    </div></div>`;
+}
+
+function renderActionButtons(e) {
+  if (e.status === 'completed') return `<div style="font-size:11px;color:var(--muted);text-align:right">完成於<br>${(e.completed_at || '').substring(0,10)}</div>`;
+  if (e.status === 'cancelled') return '';
+  const buttons = [];
+  if (e.requires_qr_checkin) buttons.push(`<button class="btn outline" style="font-size:11px;padding:6px 10px" onclick='openCheckinDialog(${e.course_id}, ${JSON.stringify(e.title).replace(/'/g, "\\'")})'>📱 掃描 QR 簽到</button>`);
+  if (e.type === 'online' && e.content_url) buttons.push(`<button class="btn outline" style="font-size:11px;padding:6px 10px" onclick="openOnlineCourse(${e.id}, ${e.course_id})">▶️ 開始上課</button>`);
+  if (e.type === 'online') buttons.push(`<button class="btn secondary" style="font-size:11px;padding:6px 10px" onclick="completeOnlineDialog(${e.id})">✅ 我已完成</button>`);
+  if (e.requires_instructor_signoff && e.status === 'in_progress') buttons.push(`<button class="btn secondary" style="font-size:11px;padding:6px 10px" onclick="instructorSignoffDialog(${e.id})">👨‍⚕️ 講師簽核</button>`);
+  if (e.requires_certificate_upload) buttons.push(`<button class="btn secondary" style="font-size:11px;padding:6px 10px" onclick="uploadCertDialog(${e.id})">📜 上傳證書</button>`);
+  if (e.status === 'registered' || e.status === 'in_progress') buttons.push(`<button class="btn outline" style="font-size:11px;padding:6px 10px;color:var(--danger);border-color:var(--danger)" onclick="cancelEnrollment(${e.id})">取消</button>`);
+  return buttons.join('');
+}
+
+async function loadCatalog(filter) {
+  const wrap = document.getElementById('catalogList');
+  wrap.innerHTML = '<div class="loading-card"><span class="loader"></span> 載入中...</div>';
+  ['All', 'Online', 'Skill', 'InPerson', 'External'].forEach(f => {
+    const btn = document.getElementById('filter' + f);
+    if (btn) { btn.style.background = ''; btn.style.color = ''; }
+  });
+  const filterMap = { '': 'All', 'online': 'Online', 'skill': 'Skill', 'in_person': 'InPerson', 'external': 'External' };
+  const activeBtn = document.getElementById('filter' + (filterMap[filter || ''] || 'All'));
+  if (activeBtn) { activeBtn.style.background = 'var(--primary)'; activeBtn.style.color = 'white'; }
+  try {
+    const list = await api.listCourses(currentEmployeeId, filter);
+    if (list.length === 0) { wrap.innerHTML = '<p style="color:var(--muted)">沒有課程</p>'; return; }
+    wrap.innerHTML = list.map(c => renderCatalogCard(c)).join('');
+  } catch (e) { wrap.innerHTML = `<div style="color:var(--danger)">載入失敗：${e.message}</div>`; }
+}
+
+function renderCatalogCard(c) {
+  const typeColor = COURSE_TYPE_COLOR[c.type] || '#6b7280';
+  const upliftStr = Object.entries(c.competency_uplift || {}).map(([k, v]) => `${k}+${v}`).join(' / ');
+  const ilpBadge = c.matches_ilp ? '<span style="background:#10b981;color:white;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600">🎯 對應你的 ILP</span>' : '';
+  const enrolled = c.enrollment_status;
+  const statusLabel = { registered: '報名', in_progress: '簽到', completed: '完成' };
+  const enrolledBadge = enrolled ? `<span style="background:#fef3c7;color:#92400e;padding:2px 10px;border-radius:10px;font-size:11px">已${statusLabel[enrolled] || ''}</span>` : '';
+  return `<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;background:var(--card)">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:10px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+          <span style="font-size:10px;background:${typeColor}22;color:${typeColor};padding:2px 8px;border-radius:4px;font-weight:600">${COURSE_TYPE_LABEL[c.type]}</span>
+          ${ilpBadge} ${enrolledBadge}
+        </div>
+        <div style="font-weight:600;font-size:14px">${c.title}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">${c.description || ''}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">📍 ${c.location || ''} ｜ 🧑‍🏫 ${c.instructor || ''} ｜ ⏱ ${c.duration_minutes} 分鐘</div>
+        <div style="font-size:11px;color:var(--accent);margin-top:4px">完成可加：<strong>${upliftStr}</strong> ｜ ${c.credit_hours || 0} 學分${c.cme_credits ? ` ｜ CME ${c.cme_credits}` : ''}</div>
+        ${c.scheduled_at ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">🕒 ${c.scheduled_at}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;flex-direction:column;align-items:end">
+        ${enrolled ? '' : `<button class="btn" style="font-size:11px;padding:7px 14px" onclick="enrollIn(${c.id})">+ 報名</button>`}
+        ${c.requires_qr_checkin && currentRole === 'mentor' ? `<button class="btn outline" style="font-size:11px;padding:6px 10px" onclick='instructorQrDialog(${c.id}, ${JSON.stringify(c.title).replace(/'/g, "\\'")})'>🧑‍🏫 產生 QR</button>` : ''}
+      </div>
+    </div></div>`;
+}
+
+async function enrollIn(course_id) {
+  try {
+    const r = await api.enroll(course_id, currentEmployeeId);
+    alert(r.status === 'enrolled' ? '✅ 報名成功！可至「我的課程」查看' : `已經報名過了 (狀態: ${r.current_status})`);
+    loadCatalog();
+  } catch (e) { alert('報名失敗：' + e.message); }
+}
+
+async function cancelEnrollment(enrollment_id) {
+  if (!confirm('確定取消報名？')) return;
+  try {
+    await api.cancelEnrollment(enrollment_id);
+    alert('已取消');
+    loadMyCourses();
+  } catch (e) { alert('失敗：' + e.message); }
+}
+
+function showModal(title, html) {
+  let m = document.getElementById('genericModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'genericModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:grid;place-items:center;z-index:1000;padding:20px';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div style="background:white;border-radius:14px;padding:24px;max-width:500px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="color:var(--primary);font-size:16px">${title}</h3>
+      <button onclick="closeModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">×</button>
+    </div>${html}</div>`;
+  m.style.display = 'grid';
+}
+function closeModal() { const m = document.getElementById('genericModal'); if (m) m.style.display = 'none'; }
+
+async function instructorQrDialog(course_id, course_title) {
+  showModal('🧑‍🏫 講師端：產生簽到 QR Code', '<div class="loading-card"><span class="loader"></span> 產生中...</div>');
+  try {
+    const r = await api.createQrToken(course_id, '示範教師');
+    // 後端回傳的 checkin_url 已經是完整 URL（含 host）
+    const checkinUrl = r.checkin_url || `${window.location.origin}/qr-checkin?token=${r.token}`;
+    const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(checkinUrl)}`;
+    showModal('🧑‍🏫 簽到 QR Code', `
+      <p style="font-size:13px;margin-bottom:8px"><strong>${course_title}</strong></p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">⏱ 30 分鐘有效。請學員：① 用手機相機掃描 ② 輸入人事號 ③ 完成簽到</p>
+      <div style="text-align:center;background:white;padding:14px;border-radius:10px;border:1px solid var(--border)"><img src="${qrSrc}" width="260" height="260" alt="QR Code"></div>
+      <div style="background:var(--soft);padding:10px;border-radius:8px;margin-top:12px;font-size:11px;word-break:break-all">
+        <div style="color:var(--muted);margin-bottom:4px">📱 掃描後跳轉的 URL（點擊在新分頁開啟模擬簽到）：</div>
+        <a href="${checkinUrl}" target="_blank" rel="noopener" style="font-family:monospace;color:var(--primary);text-decoration:underline">${checkinUrl}</a>
+      </div>
+      <div style="background:#fff7ed;padding:10px;border-radius:8px;margin-top:8px;font-size:12px;color:#9a3412">
+        ⚠️ 如果 URL 是 <code>localhost</code>，手機掃描後會無法連到此電腦。<br>
+        請改用區網 IP（如 <code>http://192.168.1.100:8000</code>）啟動服務 → 手機才能掃到。<br>
+        參見 README「手機真的掃描」章節。
+      </div>
+      <div style="background:#ecfdf5;padding:10px;border-radius:8px;margin-top:8px;font-size:12px;color:#065f46">
+        💡 也可同電腦測試：複製 token 至「我的課程 → 掃描 QR 簽到」貼上即可。
+      </div>
+      <div style="margin-top:10px"><strong style="font-size:11px;color:var(--muted)">Token：</strong><code style="font-family:monospace;font-size:11px;background:white;padding:2px 6px;border-radius:3px">${r.token}</code></div>`);
+  } catch (e) { showModal('錯誤', `<p style="color:var(--danger)">${e.message}</p>`); }
+}
+
+function openCheckinDialog(course_id, course_title) {
+  showModal('📱 學員端：掃描 QR Code 簽到', `
+    <p style="font-size:13px;margin-bottom:6px">課程：<strong>${course_title}</strong></p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">⏱ 對著講師展示的 QR Code 即可自動簽到 ｜ 或手動貼上 token</p>
+
+    <div style="display:flex;gap:6px;margin-bottom:12px;background:var(--soft);padding:4px;border-radius:8px">
+      <button id="modeCameraBtn" class="btn" style="flex:1;font-size:12px;padding:8px" onclick="switchScanMode(\'camera\')">📸 用相機掃描</button>
+      <button id="modeManualBtn" class="btn outline" style="flex:1;font-size:12px;padding:8px" onclick="switchScanMode(\'manual\')">⌨️ 手動輸入</button>
+    </div>
+
+    <div id="cameraSection">
+      <div id="qr-reader" style="width:100%;border-radius:10px;overflow:hidden;background:#1f2937;min-height:280px;display:grid;place-items:center;color:white;font-size:13px">
+        <div style="text-align:center;padding:30px">
+          <div style="font-size:48px;margin-bottom:8px">📸</div>
+          <button class="btn secondary" onclick="startCameraScan()" style="margin-top:8px">啟用相機開始掃描</button>
+          <div style="font-size:11px;color:#9ca3af;margin-top:10px">瀏覽器會詢問相機權限，請按「允許」</div>
+        </div>
+      </div>
+      <div id="cameraStatus" style="font-size:12px;color:var(--muted);margin-top:8px;text-align:center"></div>
+    </div>
+
+    <div id="manualSection" class="hidden">
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">QR Token</label>
+      <input type="text" id="qrTokenInput" placeholder="貼上講師展示的 token..." style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;font-family:monospace;font-size:13px">
+      <button class="btn" style="width:100%;margin-top:12px;padding:14px" onclick="doQrCheckin()">📲 送出簽到</button>
+      <p style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">同電腦測試時：複製講師端 modal 中的 token 貼上</p>
+    </div>
+  `);
+}
+
+let html5QrScanner = null;
+function switchScanMode(mode) {
+  document.getElementById('cameraSection').classList.toggle('hidden', mode !== 'camera');
+  document.getElementById('manualSection').classList.toggle('hidden', mode !== 'manual');
+  document.getElementById('modeCameraBtn').className = mode === 'camera' ? 'btn' : 'btn outline';
+  document.getElementById('modeCameraBtn').style.flex = '1';
+  document.getElementById('modeCameraBtn').style.fontSize = '12px';
+  document.getElementById('modeCameraBtn').style.padding = '8px';
+  document.getElementById('modeManualBtn').className = mode === 'manual' ? 'btn' : 'btn outline';
+  document.getElementById('modeManualBtn').style.flex = '1';
+  document.getElementById('modeManualBtn').style.fontSize = '12px';
+  document.getElementById('modeManualBtn').style.padding = '8px';
+  if (mode !== 'camera' && html5QrScanner) {
+    try { html5QrScanner.stop(); } catch(e) {}
+    html5QrScanner = null;
+  }
+}
+
+async function startCameraScan() {
+  if (typeof Html5Qrcode === 'undefined') {
+    document.getElementById('cameraStatus').innerHTML = '<span style="color:var(--danger)">❌ html5-qrcode 函式庫尚未載入，請改用手動輸入</span>';
+    return;
+  }
+  document.getElementById('qr-reader').innerHTML = '';
+  try {
+    html5QrScanner = new Html5Qrcode("qr-reader");
+    await html5QrScanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 240, height: 240 } },
+      async (decodedText) => {
+        // Stop scanning immediately on success
+        try { await html5QrScanner.stop(); } catch(e) {}
+        html5QrScanner = null;
+        document.getElementById('cameraStatus').innerHTML = '✅ QR Code 偵測成功，處理簽到中...';
+        // Extract token from URL if it is a URL
+        let token = decodedText;
+        try {
+          const url = new URL(decodedText);
+          token = url.searchParams.get('token') || decodedText;
+        } catch(e) { /* not a URL */ }
+        // Inject into input and submit
+        document.getElementById('manualSection').classList.remove('hidden');
+        const input = document.getElementById('qrTokenInput');
+        if (input) input.value = token;
+        doQrCheckin();
+      },
+      (err) => {} // ignore per-frame errors
+    );
+    document.getElementById('cameraStatus').innerHTML = '📡 相機已啟用，將 QR Code 對準框內即可';
+  } catch (e) {
+    document.getElementById('qr-reader').innerHTML = `<div style="color:white;text-align:center;padding:30px"><div style="font-size:48px;margin-bottom:8px">⚠️</div><div>${e.message || '相機啟用失敗'}</div><div style="font-size:11px;color:#fca5a5;margin-top:8px">請確認瀏覽器有相機權限，或改用手動輸入</div></div>`;
+  }
+}
+
+async function doQrCheckin() {
+  const token = document.getElementById('qrTokenInput').value.trim();
+  if (!token) { alert('請輸入 token'); return; }
+  try {
+    const r = await api.qrCheckin(token, currentEmployeeId);
+    let msg = `<h3 style="color:var(--success);margin-bottom:8px">✅ 簽到成功！</h3>
+      <p style="font-size:13px;margin-bottom:6px"><strong>${r.course_title}</strong></p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">${r.message}</p>`;
+    if (r.side_effects && r.side_effects.competency_changes && r.side_effects.competency_changes.length) {
+      msg += `<div style="background:#ecfdf5;padding:12px;border-radius:8px;border-left:4px solid #10b981;margin-bottom:8px">
+        <strong style="color:#065f46;font-size:12px">能力分數已自動更新：</strong>
+        <ul style="margin-top:6px;margin-left:16px;font-size:13px">${r.side_effects.competency_changes.map(c => `<li>${c.dimension}: ${c.from} → <strong>${c.to}</strong> (+${c.delta})</li>`).join('')}</ul></div>`;
+    }
+    if (r.side_effects && r.side_effects.milestones_completed && r.side_effects.milestones_completed.length) {
+      msg += `<div style="background:#dbeafe;padding:12px;border-radius:8px;border-left:4px solid #3b82f6">
+        <strong style="color:#1e40af;font-size:12px">里程碑已自動完成：</strong>
+        <ul style="margin-top:6px;margin-left:16px;font-size:13px">${r.side_effects.milestones_completed.map(m => `<li>${m}</li>`).join('')}</ul></div>`;
+    }
+    showModal('簽到結果', msg);
+    loadMyCourses();
+    if (!document.querySelector('.tab-content[data-content="radar"]').classList.contains('hidden')) renderRadar();
+    const dash = await api.getDashboard(currentEmployeeId);
+    renderProfile(dash); renderDashboard(dash);
+  } catch (e) { showModal('簽到失敗', `<p style="color:var(--danger)">${e.message}</p>`); }
+}
+
+function openOnlineCourse(enrollment_id, course_id) {
+  api.getCourse(course_id).then(c => {
+    showModal('▶️ 線上課程：' + c.title, `
+      <div style="background:#1f2937;border-radius:8px;padding:40px;text-align:center;color:white;margin-bottom:12px">
+        <div style="font-size:40px">▶️</div>
+        <div style="font-size:14px;margin-top:8px">demo 模擬：影片播放器</div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px">實際版本會嵌入院內 e-learning 影片</div>
+      </div>
+      <p style="font-size:12px;color:var(--muted)">看完後請按「我已完成」並寫下 1-2 段反思</p>
+      <button class="btn" style="width:100%" onclick="closeModal(); completeOnlineDialog(${enrollment_id})">✅ 我已完成</button>`);
+  });
+}
+
+function completeOnlineDialog(enrollment_id) {
+  showModal('✅ 線上課程完成', `
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">寫下 1-2 段反思（會自動寫入反思日誌）</p>
+    <textarea id="reflectionInput" style="width:100%;min-height:100px;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px" placeholder="這堂課最有收穫的是..."></textarea>
+    <button class="btn" style="width:100%;margin-top:12px" onclick="doCompleteOnline(${enrollment_id})">提交完成</button>`);
+}
+
+async function doCompleteOnline(enrollment_id) {
+  const reflection = document.getElementById('reflectionInput').value;
+  try {
+    const r = await api.completeOnline(enrollment_id, currentEmployeeId, reflection);
+    showCompletionResult(r);
+  } catch (e) { showModal('失敗', `<p style="color:var(--danger)">${e.message}</p>`); }
+}
+
+function instructorSignoffDialog(enrollment_id) {
+  showModal('👨‍⚕️ 講師簽核完成', `
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">demo 模擬講師端簽核（正式版需講師身分驗證）</p>
+    <label style="font-size:13px;font-weight:600">分數 (0-100)</label>
+    <input type="number" id="scoreInput" value="85" min="0" max="100" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px">
+    <label style="font-size:13px;font-weight:600">講師評語</label>
+    <textarea id="feedbackInput" style="width:100%;min-height:100px;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px" placeholder="表現良好，已能..."></textarea>
+    <button class="btn" style="width:100%;margin-top:12px" onclick="doSignoff(${enrollment_id})">完成簽核</button>`);
+}
+
+async function doSignoff(enrollment_id) {
+  const score = parseFloat(document.getElementById('scoreInput').value);
+  const feedback = document.getElementById('feedbackInput').value;
+  if (!feedback) { alert('請填寫評語'); return; }
+  try {
+    const r = await api.instructorSignoff(enrollment_id, feedback, score);
+    showCompletionResult(r);
+  } catch (e) { showModal('失敗', `<p style="color:var(--danger)">${e.message}</p>`); }
+}
+
+function uploadCertDialog(enrollment_id) {
+  showModal('📜 上傳外部認證證書', `
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">demo 模擬：填入證書連結（正式版可上傳 PDF/JPG）</p>
+    <label style="font-size:13px;font-weight:600">證書連結 / 編號</label>
+    <input type="text" id="certUrlInput" value="https://example.com/cert/ACLS-2026-1234" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px">
+    <label style="font-size:13px;font-weight:600">分數（如有）</label>
+    <input type="number" id="certScoreInput" value="100" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:13px">
+    <button class="btn" style="width:100%;margin-top:12px" onclick="doUploadCert(${enrollment_id})">提交審核</button>`);
+}
+
+async function doUploadCert(enrollment_id) {
+  const url = document.getElementById('certUrlInput').value;
+  const score = parseFloat(document.getElementById('certScoreInput').value);
+  try {
+    const r = await api.uploadCert(enrollment_id, url, score);
+    showCompletionResult(r);
+  } catch (e) { showModal('失敗', `<p style="color:var(--danger)">${e.message}</p>`); }
+}
+
+function showCompletionResult(r) {
+  let msg = `<h3 style="color:var(--success);margin-bottom:10px">🎉 課程完成！</h3>`;
+  if (r.side_effects && r.side_effects.competency_changes) {
+    msg += `<div style="background:#ecfdf5;padding:12px;border-radius:8px;border-left:4px solid #10b981;margin-bottom:8px">
+      <strong style="color:#065f46;font-size:12px">能力分數已自動更新：</strong>
+      <ul style="margin-top:6px;margin-left:16px;font-size:13px">${r.side_effects.competency_changes.map(c => `<li>${c.dimension}: ${c.from} → <strong>${c.to}</strong> (+${c.delta})</li>`).join('')}</ul></div>`;
+  }
+  if (r.side_effects && r.side_effects.milestones_completed && r.side_effects.milestones_completed.length) {
+    msg += `<div style="background:#dbeafe;padding:12px;border-radius:8px;border-left:4px solid #3b82f6;margin-bottom:8px">
+      <strong style="color:#1e40af;font-size:12px">里程碑已自動完成：</strong>
+      <ul style="margin-top:6px;margin-left:16px;font-size:13px">${r.side_effects.milestones_completed.map(m => `<li>${m}</li>`).join('')}</ul></div>`;
+  }
+  if (r.side_effects && r.side_effects.monthly_req_updated) {
+    msg += `<div style="background:#fef3c7;padding:12px;border-radius:8px;border-left:4px solid #f59e0b">
+      <strong style="color:#92400e;font-size:12px">本月規定 +1：</strong> ${r.side_effects.monthly_req_updated}</div>`;
+  }
+  showModal('完成結果', msg);
+  loadMyCourses();
+  if (!document.querySelector('.tab-content[data-content="radar"]').classList.contains('hidden')) renderRadar();
+  api.getDashboard(currentEmployeeId).then(d => { renderProfile(d); renderDashboard(d); });
+}
+
+/* ====================================================
+   Reflection Feedback (講師端對學員反思的回饋)
+==================================================== */
+async function loadPendingReflections() {
+  const wrap = document.getElementById('pendingReflectionsList');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading-card"><span class="loader"></span> 載入學員反思中...</div>';
+  try {
+    const allList = await api.pendingReflections();
+
+    // Populate the student filter dropdown (once)
+    const sel = document.getElementById('reflectionStudentFilter');
+    if (sel && sel.options.length <= 1) {
+      const seen = new Set();
+      allList.forEach(r => {
+        if (seen.has(r.employee_id)) return;
+        seen.add(r.employee_id);
+        const opt = document.createElement('option');
+        opt.value = r.employee_id;
+        opt.textContent = `${r.employee_id}  ${r.student_name}  (${r.stage})`;
+        sel.appendChild(opt);
+      });
+    }
+
+    // Filter by selected student
+    const filterEmp = sel ? sel.value : '';
+    const list = filterEmp ? allList.filter(r => r.employee_id === filterEmp) : allList;
+
+    // Stats
+    const stats = document.getElementById('reflectionFilterStats');
+    if (stats) {
+      const noFb = list.filter(r => r.feedback_count === 0).length;
+      stats.textContent = `共 ${list.length} 筆反思 ｜ 未回饋 ${noFb} 筆`;
+    }
+
+    if (list.length === 0) { wrap.innerHTML = '<p style="color:var(--muted);font-size:13px">這位學員沒有反思紀錄</p>'; return; }
+    wrap.innerHTML = list.map(r => {
+      const noFeedback = r.feedback_count === 0;
+      const badge = noFeedback
+        ? '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">未回饋</span>'
+        : `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">已回饋 ${r.feedback_count}</span>`;
+      return `
+        <div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;background:${noFeedback ? '#fffbeb' : 'var(--soft)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-size:13px;font-weight:600">${r.student_name} <span style="color:var(--muted);font-weight:normal;font-size:11px">(${r.stage} · ${r.employee_id})</span></div>
+            <div style="display:flex;gap:6px;align-items:center">${badge}<span style="font-size:11px;color:var(--muted)">${r.created_at.substring(0,10)}</span></div>
+          </div>
+          <div style="font-size:13px;color:var(--text);background:white;padding:10px;border-radius:8px;margin-bottom:10px">${r.content}</div>
+          <div style="display:flex;gap:6px;align-items:flex-start">
+            <textarea id="fb_${r.id}" placeholder="輸入給此學員的回饋..." style="flex:1;min-height:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-family:inherit;font-size:13px;resize:vertical"></textarea>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <select id="rating_${r.id}" style="padding:6px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+                <option value="">無評分</option>
+                <option value="1">⭐</option>
+                <option value="2">⭐⭐</option>
+                <option value="3" selected>⭐⭐⭐</option>
+                <option value="4">⭐⭐⭐⭐</option>
+                <option value="5">⭐⭐⭐⭐⭐</option>
+              </select>
+              <button class="btn" style="font-size:12px;padding:6px 10px" onclick="submitFeedback(${r.id}, '${r.employee_id}')">送出</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } catch (e) { wrap.innerHTML = `<div style="color:var(--danger)">載入失敗：${e.message}</div>`; }
+}
+
+async function submitFeedback(reflection_id, employee_id) {
+  const txt = document.getElementById('fb_' + reflection_id).value.trim();
+  if (!txt) { alert('請填寫回饋內容'); return; }
+  const rating = parseInt(document.getElementById('rating_' + reflection_id).value) || null;
+  try {
+    await api.createFeedback(reflection_id, employee_id, txt, rating);
+    alert('✅ 回饋已送出，學員的反思日誌頁面立即會看到');
+    loadPendingReflections();
+  } catch (e) { alert('送出失敗：' + e.message); }
+}
+
+/* ====================================================
+   New Course Form (教學部新增課程)
+==================================================== */
+function renderNewCourseForm() {
+  const wrap = document.getElementById('newCourseForm');
+  if (!wrap) return;
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">課程代碼 *</label>
+        <input id="nc_code" placeholder="如 INPERSON-NEW-001" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">課程類型 *</label>
+        <select id="nc_type" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+          <option value="online">① 線上課程 (e-learning)</option>
+          <option value="skill">② 技能中心 實作訓練</option>
+          <option value="in_person" selected>③ 實體課程 (晨會/Grand Round)</option>
+          <option value="external">④ 外部認證 (ACLS/ATLS)</option>
+        </select>
+      </div>
+    </div>
+    <label style="display:block;font-size:13px;font-weight:600;margin:14px 0 4px">課程名稱 *</label>
+    <input id="nc_title" placeholder="如：SDM 共享決策工作坊" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+    <label style="display:block;font-size:13px;font-weight:600;margin:14px 0 4px">課程說明</label>
+    <textarea id="nc_desc" placeholder="課程內容簡介..." style="width:100%;min-height:60px;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit"></textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px">
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">講師</label>
+        <input id="nc_instructor" value="示範教師" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">地點</label>
+        <input id="nc_location" placeholder="9A 病房討論室" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:14px">
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">時長 (分鐘)</label>
+        <input id="nc_duration" type="number" value="60" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">學分</label>
+        <input id="nc_credit" type="number" value="1" step="0.5" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+      <div>
+        <label style="display:block;font-size:13px;font-weight:600;margin-bottom:4px">容量</label>
+        <input id="nc_capacity" type="number" value="20" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+      </div>
+    </div>
+    <label style="display:block;font-size:13px;font-weight:600;margin:14px 0 4px">排課時間</label>
+    <input id="nc_scheduled" placeholder="如：每週四 14:00 / 每月第 2 週週六 09:00" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+    <label style="display:block;font-size:13px;font-weight:600;margin:14px 0 4px">完成後加分（六大核心能力，填數值 0-0.5）</label>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px">
+      ${['PC','MK','PBLI','ICS','Prof','SBP'].map(d => `
+        <div>
+          <label style="font-size:11px;color:var(--muted)">${d}</label>
+          <input id="nc_uplift_${d}" type="number" step="0.05" min="0" max="0.5" placeholder="0" style="width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+        </div>`).join('')}
+    </div>
+    <label style="display:block;font-size:13px;font-weight:600;margin:14px 0 4px">完成驗證方式（可多選）</label>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px">
+      <label><input id="nc_qr" type="checkbox" checked> QR Code 簽到</label>
+      <label><input id="nc_signoff" type="checkbox"> 講師簽核</label>
+      <label><input id="nc_cert" type="checkbox"> 上傳證書</label>
+      <label><input id="nc_auto" type="checkbox" checked> 簽到後自動完成</label>
+    </div>
+    <label style="display:block;font-size:13px;font-weight:600;margin:14px 0 4px">標籤 (逗號分隔)</label>
+    <input id="nc_tags" placeholder="SDM, ICS, 共享決策" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:13px">
+
+    <div style="display:flex;gap:8px;margin-top:18px">
+      <button class="btn" onclick="submitNewCourse()">➕ 新增課程</button>
+      <button class="btn outline" onclick="renderNewCourseForm()">清空表單</button>
+    </div>
+    <div id="newCourseResult"></div>
+  `;
+}
+
+async function submitNewCourse() {
+  const code = document.getElementById('nc_code').value.trim();
+  const title = document.getElementById('nc_title').value.trim();
+  if (!code || !title) { alert('請填課程代碼與名稱'); return; }
+  const uplift = {};
+  ['PC','MK','PBLI','ICS','Prof','SBP'].forEach(d => {
+    const v = parseFloat(document.getElementById('nc_uplift_'+d).value);
+    if (!isNaN(v) && v > 0) uplift[d] = v;
+  });
+  const course = {
+    course_code: code,
+    title: title,
+    description: document.getElementById('nc_desc').value,
+    type: document.getElementById('nc_type').value,
+    instructor: document.getElementById('nc_instructor').value,
+    location: document.getElementById('nc_location').value,
+    competency_uplift: uplift,
+    duration_minutes: parseInt(document.getElementById('nc_duration').value) || 60,
+    schedule_type: 'recurring',
+    scheduled_at: document.getElementById('nc_scheduled').value,
+    credit_hours: parseFloat(document.getElementById('nc_credit').value) || 0,
+    requires_qr_checkin: document.getElementById('nc_qr').checked ? 1 : 0,
+    requires_instructor_signoff: document.getElementById('nc_signoff').checked ? 1 : 0,
+    requires_certificate_upload: document.getElementById('nc_cert').checked ? 1 : 0,
+    auto_complete_after_signin: document.getElementById('nc_auto').checked ? 1 : 0,
+    capacity: parseInt(document.getElementById('nc_capacity').value) || 30,
+    tags: document.getElementById('nc_tags').value.split(',').map(s => s.trim()).filter(Boolean),
+  };
+  try {
+    const r = await api.createCourse(course);
+    document.getElementById('newCourseResult').innerHTML = `
+      <div style="margin-top:14px;background:#ecfdf5;padding:14px;border-radius:10px;border-left:4px solid #10b981;color:#065f46">
+        ✅ 課程「${r.title}」已新增（ID=${r.course_id}）。<br>
+        學員端「🔍 課程瀏覽」現在可看到此課程並報名。
+      </div>`;
+  } catch (e) {
+    document.getElementById('newCourseResult').innerHTML = `<div style="margin-top:14px;color:var(--danger);background:#fee2e2;padding:14px;border-radius:8px">❌ ${e.message}</div>`;
+  }
+}
+
+
+/* ====================================================
+   Mentor QR Code Generator List
+==================================================== */
+async function loadInstructorQrCourseList() {
+  const wrap = document.getElementById('instructorQrCourseList');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loading-card"><span class="loader"></span> 載入課程中...</div>';
+  try {
+    const all = await api.listCourses(null);
+    const qrCourses = all.filter(c => c.requires_qr_checkin);
+    if (qrCourses.length === 0) {
+      wrap.innerHTML = '<p style="color:var(--muted);font-size:13px">沒有需要 QR 簽到的課程</p>';
+      return;
+    }
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">';
+    qrCourses.forEach(c => {
+      const typeColor = COURSE_TYPE_COLOR[c.type] || '#6b7280';
+      const safeTitle = JSON.stringify(c.title).replace(/'/g, "\\'");
+      html += '<div style="border:1px solid var(--border);border-radius:10px;padding:12px;background:var(--soft)">' +
+        '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">' +
+        '<span style="font-size:10px;background:' + typeColor + '22;color:' + typeColor + ';padding:2px 8px;border-radius:4px;font-weight:600">' + (COURSE_TYPE_LABEL[c.type] || c.type) + '</span>' +
+        '</div>' +
+        '<div style="font-weight:600;font-size:13px">' + c.title + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);margin:4px 0">📍 ' + (c.location || '') + ' ｜ 🕒 ' + (c.scheduled_at || '隨開隨用') + '</div>' +
+        "<button class=\"btn\" style=\"width:100%;margin-top:8px;padding:8px;font-size:12px\" onclick='instructorQrDialog(" + c.id + ", " + safeTitle + ")'>📲 產生簽到 QR Code</button>" +
+        '</div>';
+    });
+    html += '</div>';
+    wrap.innerHTML = html;
+  } catch (e) {
+    wrap.innerHTML = '<div style="color:var(--danger)">載入失敗：' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
